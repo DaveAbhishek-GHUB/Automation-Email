@@ -212,6 +212,19 @@ async function start() {
 
   await createTransporterFromDB(); // loads SMTP from DB → survives Railway restarts
 
+  // ── Auto-seed settings from env vars (runs every startup) ──────────────────
+  // This ensures Railway env vars always override stale DB values like localhost
+  const autoSeed = [
+    ['app_url',       process.env.APP_URL       || 'https://automation-email-production.up.railway.app'],
+    ['brevo_api_key', process.env.BREVO_API_KEY || ''],
+    ['from_email',    process.env.FROM_EMAIL     || 'info@varadatech.com'],
+    ['from_name',     process.env.FROM_NAME      || 'VaradaTech'],
+  ];
+  for (const [key, val] of autoSeed) {
+    if (val) await queries.setSetting(key, val);
+  }
+  console.log(`🌐 App URL set to: ${process.env.APP_URL || 'https://automation-email-production.up.railway.app'}`);
+
   app.listen(PORT, () => {
     console.log(`
 ╔══════════════════════════════════════════════════════╗

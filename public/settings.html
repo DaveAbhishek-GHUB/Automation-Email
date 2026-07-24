@@ -36,22 +36,16 @@
 
     <div class="page-content" style="max-width:720px">
 
-      <!-- Gmail Tracking Fix — App URL -->
-      <div class="card mb-5" style="border-color:var(--blue);border-width:2px">
+      <!-- Public App URL - auto-set to Railway URL -->
+      <div class="card mb-5">
         <div class="section-title mb-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          Public App URL (for Gmail Tracking)
-        </div>
-        <div class="alert alert-warning mb-3" style="margin-top:8px">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div><strong>Gmail users can't reach localhost.</strong> Set a public URL here so tracking links in emails work for all recipients including Gmail users. Use <a href="https://ngrok.com" target="_blank" style="color:var(--blue)">ngrok</a> or deploy to a server.</div>
+          Public App URL <span style="font-size:11px;color:var(--green);font-weight:600;margin-left:6px">✅ Auto-set to Railway URL</span>
         </div>
         <div class="form-group mb-3">
-          <label>Public URL <span style="font-size:11px;color:var(--text-muted)">(without trailing slash)</span></label>
-          <input type="text" class="input" id="app-url" placeholder="https://xxxx.ngrok-free.app or https://yourdomain.com" />
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
-            To get a free ngrok URL: open Terminal → run <code>brew install ngrok</code> → run <code>ngrok http 3000</code> → paste the https URL above
-          </div>
+          <label>Public URL <span style="font-size:11px;color:var(--text-muted)">(used for email open/click tracking)</span></label>
+          <input type="text" class="input" id="app-url" value="https://automation-email-production.up.railway.app" />
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">This is pre-set to your Railway URL. All tracking links in emails will use this.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveAppUrl()">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -91,11 +85,11 @@
         <div id="brevo-result" class="mt-3"></div>
       </div>
 
-      <!-- SMTP Config (fallback for local use) -->
-      <div class="card mb-5">
+      <!-- SMTP Config (fallback - hidden when Brevo is active) -->
+      <div class="card mb-5" id="smtp-card" style="display:none">
         <div class="section-title mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-          SMTP / Email Server <span style="font-size:11px;color:var(--text-muted);margin-left:6px">(fallback — works locally, not on Railway)</span>
+          SMTP / Email Server <span style="font-size:11px;color:var(--text-muted);margin-left:6px">(fallback — not needed when Brevo API is active)</span>
         </div>
         <div class="form-row">
           <div class="form-group"><label>SMTP Host</label><input type="text" class="input" id="smtp-host" placeholder="smtpout.secureserver.net" /></div>
@@ -375,14 +369,28 @@ async function saveSendingSettings() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
-  // Check current sending method status
+
+  // Auto-save the Railway URL if field shows localhost
+  const urlField = document.getElementById('app-url');
+  if (!urlField.value || urlField.value.includes('localhost')) {
+    urlField.value = 'https://automation-email-production.up.railway.app';
+    try { await API.post('/api/settings/app-url', { url: urlField.value }); } catch(e) {}
+  }
+
+  // Check Brevo API status → show/hide SMTP section
   try {
     const status = await API.get('/api/settings/status');
     const brevoResult = document.getElementById('brevo-result');
+    const smtpCard = document.getElementById('smtp-card');
+
     if (status.method === 'brevo-api') {
-      brevoResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Brevo API is ACTIVE — emails will send via Brevo (Railway-compatible)</span></div>`;
-    } else if (status.method === 'none') {
-      brevoResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ No email method configured. Add your Brevo API key above and save it.</span></div>`;
+      // Brevo active → hide SMTP (not needed), show success
+      if (smtpCard) smtpCard.style.display = 'none';
+      brevoResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Brevo API is ACTIVE — emails send via Brevo. No SMTP password needed.</span></div>`;
+    } else {
+      // No Brevo → show SMTP section
+      if (smtpCard) smtpCard.style.display = 'block';
+      brevoResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ Add your Brevo API key above and save it to enable email sending.</span></div>`;
     }
   } catch(e) {}
 });
