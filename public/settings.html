@@ -366,7 +366,19 @@ async function saveSendingSettings() {
   } catch(e) { showToast('error','Error',e.message); }
 }
 
-document.addEventListener('DOMContentLoaded', loadSettings);
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSettings();
+  // Check current sending method status
+  try {
+    const status = await API.get('/api/settings/status');
+    const brevoResult = document.getElementById('brevo-result');
+    if (status.method === 'brevo-api') {
+      brevoResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Brevo API is ACTIVE — emails will send via Brevo (Railway-compatible)</span></div>`;
+    } else if (status.method === 'none') {
+      brevoResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ No email method configured. Add your Brevo API key above and save it.</span></div>`;
+    }
+  } catch(e) {}
+});
 </script>
 </body>
 </html>

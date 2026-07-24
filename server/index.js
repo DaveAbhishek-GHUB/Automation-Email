@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { initializeDatabase, queries, run, get, all } = require('./db');
 const { initializeScheduler } = require('./scheduler');
-const { createTransporter, createTransporterFromDB, verifyConnection } = require('./mailer');
+const { createTransporter, createTransporterFromDB, verifyConnection, verifyBrevoAPIKey } = require('./mailer');
 
 
 const app = express();
@@ -175,12 +175,22 @@ app.post('/api/settings/brevo', async (req, res) => {
 // POST /api/settings/test-brevo — verify Brevo API key via HTTPS (works on Railway)
 app.post('/api/settings/test-brevo', async (req, res) => {
   try {
-    const { verifyBrevoAPIKey } = require('./mailer');
+    // Load key from DB if not in env yet
+    if (!process.env.BREVO_API_KEY) {
+      const row = await get("SELECT value FROM settings WHERE key='brevo_api_key'").catch(() => null);
+      if (row?.value) process.env.BREVO_API_KEY = row.value;
+    }
     const result = await verifyBrevoAPIKey();
     res.json({ success: result.success, message: result.message });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
+// GET /api/settings/status — quick check of what's configured
+app.get('/api/settings/status', async (req, res) => {
+  const hasBrevo = !!process.env.BREVO_API_KEY;
+  const hasSmtp  = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+  res.json({ hasBrevo, hasSmtp, method: hasBrevo ? 'brevo-api' : (hasSmtp ? 'smtp' : 'none') });
+});
 
 // ─── Frontend Routes ──────────────────────────────────────────────────────────
 const pages = ['contacts', 'campaigns', 'followups', 'analytics', 'settings'];
