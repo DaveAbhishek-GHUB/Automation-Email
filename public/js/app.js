@@ -140,20 +140,28 @@ function setButtonLoading(btn, loading, text) {
   else { btn.innerHTML = btn._orig || btn.innerHTML; btn.classList.remove('loading'); }
 }
 
-// ─── SMTP Status indicator ────────────────────────────────────
+// ─── Email Status indicator (Brevo API or SMTP) ────────────────
 async function loadSmtpStatus() {
   const el = document.getElementById('smtp-status');
   if (!el) return;
   try {
-    const { settings } = await API.get('/api/analytics/settings');
-    const configured = settings?.smtp_configured === 'true';
-    const dot = el.querySelector('.status-dot');
-    if (configured) {
-      dot?.classList.add('online');
+    // Check Brevo API first (preferred method for Railway)
+    let method = 'none';
+    try {
+      const status = await API.get('/api/settings/status');
+      method = status.method || 'none';
+    } catch(e) {
+      // fallback to old settings check
+      const { settings } = await API.get('/api/analytics/settings');
+      method = settings?.smtp_configured === 'true' ? 'smtp' : 'none';
+    }
+
+    if (method === 'brevo-api') {
+      el.innerHTML = `<div class="status-dot online"></div> Brevo API ✅`;
+    } else if (method === 'smtp') {
       el.innerHTML = `<div class="status-dot online"></div> SMTP Connected`;
     } else {
-      dot?.classList.add('offline');
-      el.innerHTML = `<div class="status-dot offline"></div> SMTP Not Set`;
+      el.innerHTML = `<div class="status-dot offline"></div> Email Not Set`;
     }
   } catch(e) {
     el.innerHTML = `<div class="status-dot offline"></div> Offline`;
