@@ -300,15 +300,16 @@ async function testBrevoAPI() {
   } finally { setButtonLoading(btn, false); }
 }
 
+async function saveSettings() {
   const btn = document.getElementById('save-smtp-btn');
   setButtonLoading(btn, true, 'Saving…');
   try {
     await API.post('/api/settings/smtp', {
-      host: document.getElementById('smtp-host').value,
-      port: document.getElementById('smtp-port').value,
-      user: document.getElementById('smtp-user').value,
-      pass: document.getElementById('smtp-pass').value,
-      secure: document.getElementById('smtp-secure').value,
+      host:     document.getElementById('smtp-host').value,
+      port:     document.getElementById('smtp-port').value,
+      user:     document.getElementById('smtp-user').value,
+      pass:     document.getElementById('smtp-pass').value,
+      secure:   document.getElementById('smtp-secure').value,
       fromName: document.getElementById('from-name').value,
     });
     showToast('success','Saved','SMTP settings updated');
