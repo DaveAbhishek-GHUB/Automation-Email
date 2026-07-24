@@ -22,6 +22,21 @@ function getSmtpConfig() {
   };
 }
 
+async function createTransporterFromDB() {
+  // Load all SMTP settings from DB into env vars (called on startup)
+  try {
+    const keys = ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure','from_name','from_email'];
+    for (const key of keys) {
+      const row = await get(`SELECT value FROM settings WHERE key='${key}'`);
+      if (row?.value) {
+        const envKey = key.toUpperCase();
+        process.env[envKey] = row.value;
+      }
+    }
+  } catch(e) { /* DB not ready yet, use env vars */ }
+  return createTransporter();
+}
+
 function createTransporter() {
   const config = getSmtpConfig();
   if (!config.auth.user || !config.auth.pass) {
@@ -33,15 +48,31 @@ function createTransporter() {
   return transporter;
 }
 
+
 async function verifyConnection() {
   try {
+    // Load SMTP settings from DB (persists across Railway restarts)
+    const rows = await Promise.all([
+      get("SELECT value FROM settings WHERE key='smtp_host'"),
+      get("SELECT value FROM settings WHERE key='smtp_pass'"),
+    ]);
+    if (rows[0]?.value) process.env.SMTP_HOST = rows[0].value;
+    if (rows[1]?.value) process.env.SMTP_PASS = rows[1].value;
+
     const t = createTransporter();
-    if (!t) return { success: false, message: 'SMTP credentials not configured' };
-    await t.verify();
+    if (!t) return { success: false, message: 'SMTP credentials not configured. Please save Settings first.' };
+
+    // Add a 25-second timeout so it never hangs
+    await Promise.race([
+      t.verify(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out after 25s. Try port 587 with STARTTLS if on a cloud server.')), 25000)
+      )
+    ]);
     await queries.setSetting('smtp_configured', 'true');
-    return { success: true, message: 'TitanMail SMTP connection verified ✅' };
+    return { success: true, message: 'SMTP connection verified ✅ Emails will be sent successfully.' };
   } catch (err) {
-    await queries.setSetting('smtp_configured', 'false');
+    await queries.setSetting('smtp_configured', 'false').catch(() => {});
     return { success: false, message: err.message };
   }
 }
@@ -176,4 +207,4 @@ async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followup
   return { sentCount, failedCount };
 }
 
-module.exports = { createTransporter, verifyConnection, sendEmail, sendBulkCampaign, compileTemplate, getSmtpConfig };
+module.exports = { createTransporter, createTransporterFromDB, verifyConnection, sendEmail, sendBulkCampaign, compileTemplate, getSmtpConfig };

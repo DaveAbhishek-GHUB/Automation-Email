@@ -247,10 +247,43 @@ async function testSMTP() {
   const btn = document.getElementById('test-btn');
   const result = document.getElementById('smtp-result');
   setButtonLoading(btn, true, 'Testing…');
-  result.innerHTML = '';
+  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Connecting to SMTP server… (may take up to 30s)</div>';
   try {
-    const res = await API.post('/api/settings/test-smtp', {});
-    result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
+    // First save current settings so the server uses them
+    await API.post('/api/settings/smtp', {
+      host: document.getElementById('smtp-host').value,
+      port: document.getElementById('smtp-port').value,
+      user: document.getElementById('smtp-user').value,
+      pass: document.getElementById('smtp-pass').value,
+      secure: document.getElementById('smtp-secure').value,
+      fromName: document.getElementById('from-name').value,
+    });
+    // Test with a 30-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    let res;
+    try {
+      const raw = await fetch('/api/settings/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      res = await raw.json();
+    } catch(fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr.name === 'AbortError') {
+        result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Connection timed out after 30s. Railway may be blocking port 465. Try port 587 with STARTTLS instead.</span></div>`;
+        return;
+      }
+      throw fetchErr;
+    }
+    if (res.success) {
+      result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
+    } else {
+      result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${res.message || 'Connection failed'}</span></div>`;
+    }
   } catch(e) {
     result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${e.message}</span></div>`;
   } finally { setButtonLoading(btn, false); }

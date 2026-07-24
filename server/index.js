@@ -5,7 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const { initializeDatabase, queries, run, get, all } = require('./db');
 const { initializeScheduler } = require('./scheduler');
-const { createTransporter, verifyConnection } = require('./mailer');
+const { createTransporter, createTransporterFromDB, verifyConnection } = require('./mailer');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -174,7 +175,7 @@ async function start() {
     }
   }
 
-  createTransporter();
+  await createTransporterFromDB(); // loads SMTP from DB → survives Railway restarts
 
   app.listen(PORT, () => {
     console.log(`
