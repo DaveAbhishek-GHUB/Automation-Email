@@ -234,16 +234,22 @@ async function loadSettings() {
     const res = await API.get('/api/analytics/settings');
     const s = res.settings || {};
     document.getElementById('smtp-host').value   = s.smtp_host   || 'smtpout.secureserver.net';
-    document.getElementById('smtp-port').value   = s.smtp_port   || '587';
+    document.getElementById('smtp-port').value   = s.smtp_port   || '465';
     document.getElementById('smtp-user').value   = s.smtp_user   || 'info@varadatech.com';
     document.getElementById('smtp-pass').value   = s.smtp_pass   || '';
     document.getElementById('smtp-secure').value = (s.smtp_secure === 'true') ? 'true' : 'false';
     document.getElementById('from-name').value   = s.from_name   || 'VaradaTech';
     document.getElementById('from-email').value  = s.from_email  || 'info@varadatech.com';
-    if (s.brevo_api_key) document.getElementById('brevo-api-key').value = s.brevo_api_key;
+    document.getElementById('app-url').value     = s.app_url     || 'https://automation-email-production.up.railway.app';
+    // brevo_api_key is not returned by the API for security, but we show a placeholder if it's configured
+    const brevoInput = document.getElementById('brevo-api-key');
+    if (s.brevo_api_key) {
+      brevoInput.value = s.brevo_api_key;
+    } else {
+      brevoInput.placeholder = 'Pre-configured via config.js — click Test API Key to verify';
+    }
     document.getElementById('batch-size').value = s.batch_size || '50';
     document.getElementById('batch-delay').value= s.batch_delay_ms || '1000';
-    document.getElementById('app-url').value    = s.app_url    || '';
   } catch(e) {}
 }
 

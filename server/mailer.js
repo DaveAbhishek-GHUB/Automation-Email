@@ -1,6 +1,15 @@
 const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
 const { queries, run, get, all } = require('./db');
+const DEFAULTS = require('./config');
+
+// ── Apply defaults to process.env if not already set ─────────────────────────
+// This means the app works 24/7 out of the box — no manual configuration needed
+const ENV_KEYS = ['BREVO_API_KEY','FROM_EMAIL','FROM_NAME','APP_URL',
+                  'SMTP_HOST','SMTP_PORT','SMTP_SECURE','SMTP_USER','SMTP_PASS'];
+for (const key of ENV_KEYS) {
+  if (!process.env[key] && DEFAULTS[key]) process.env[key] = DEFAULTS[key];
+}
 
 let transporter = null;
 
