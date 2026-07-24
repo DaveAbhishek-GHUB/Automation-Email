@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Follow-ups — TitanMail</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    .sequence-card { background:var(--bg-card); border:1px solid var(--border-light); border-radius:var(--radius-lg); padding:20px 24px; margin-bottom:14px; box-shadow:var(--shadow-sm); transition:box-shadow .2s; }
+    .sequence-card:hover { box-shadow:var(--shadow-md); }
+    .step-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--divider); }
+    .step-row:last-child { border-bottom:none; }
+    .step-num { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+    .step-num.launch { background:var(--blue-faint); color:var(--blue); border:2px solid var(--blue); }
+    .step-num.followup { background:var(--green-bg); color:var(--green); border:2px solid var(--green); }
+    .step-connector { width:2px; height:20px; background:linear-gradient(to bottom,var(--blue-light),var(--green-light)); margin-left:14px; }
+    .chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:var(--radius-full); font-size:11px; font-weight:600; }
+    .chip-blue  { background:var(--blue-faint); color:var(--blue); border:1px solid var(--border); }
+    .chip-green { background:var(--green-bg);   color:var(--green); border:1px solid #A7F3D0; }
+    .chip-orange{ background:var(--yellow-bg);  color:var(--yellow); border:1px solid #FDE68A; }
+    .chip-gray  { background:var(--divider);    color:var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+      <div class="logo-text"><h2>TitanMail</h2><span>Marketing Automation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
+      <a href="/contacts" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</a>
+      <a href="/campaigns" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Campaigns</a>
+      <a href="/followups" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Follow-ups</a>
+      <div class="nav-section-label">Insights</div>
+      <a href="/analytics" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analytics</a>
+      <div class="nav-section-label">System</div>
+      <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg> Settings</a>
+    </nav>
+    <div class="sidebar-footer"><div class="smtp-status" id="smtp-status"><div class="status-dot"></div> Checking...</div></div>
+  </aside>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Follow-up Sequences
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadFollowups()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+        <a href="/campaigns" class="btn btn-primary btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Campaign
+        </a>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Info card -->
+      <div class="card mb-5" style="background:var(--blue-faint);border-color:var(--border)">
+        <div style="display:flex;align-items:flex-start;gap:16px">
+          <div class="stat-icon blue" style="width:40px;height:40px;flex-shrink:0;border-radius:10px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">How Sequences Work</div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">
+              Each sequence has a <strong>Launch Email</strong> (sent on Day 0) and a <strong>Follow-up Email</strong> that repeats with your chosen gap.
+              The scheduler runs <strong>every hour</strong> — only <strong>one step</strong> fires per run to guarantee the correct day gap between emails.
+              All steps are fully automatic after launch.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sequence list -->
+      <div class="flex items-center justify-between mb-4">
+        <div class="section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          Active Sequences
+        </div>
+      </div>
+
+      <div id="followups-content">
+        <div style="text-align:center;padding:60px;color:var(--text-muted)">Loading…</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+async function loadFollowups() {
+  const container = document.getElementById('followups-content');
+  container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">Loading…</div>';
+  try {
+    const { campaigns } = await API.get('/api/campaigns');
+    const seqCampaigns = campaigns?.filter(c =>
+      ['sequence_active','completed','draft','scheduled'].includes(c.status)
+    ) || [];
+
+    if (!seqCampaigns.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
+          <h3>No sequences yet</h3>
+          <p>Create a campaign with follow-up steps to see your sequences here.</p>
+          <a href="/campaigns" class="btn btn-primary mt-4">Create Campaign</a>
+        </div>`;
+      return;
+    }
+
+    // ── Helper: add N days to a Date and return a formatted string ──────────────
+    function addDays(date, n) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+
+    function fmtDate(d) {
+      return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    }
+
+    function dateChip(date, isLaunch, isFuture, isSent) {
+      const label = fmtDate(date);
+      if (isSent) {
+        return `<span class="chip chip-green" title="Sent on this date">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          ${label}
+        </span>`;
+      }
+      if (isFuture) {
+        return `<span class="chip chip-orange" title="Scheduled send date">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${label}
+        </span>`;
+      }
+      return `<span class="chip chip-blue" title="Launch date">${label}</span>`;
+    }
+
+    const today = new Date();
+
+    const cards = await Promise.all(seqCampaigns.map(async c => {
+      let followups = [];
+      try {
+        const detail = await API.get(`/api/campaigns/${c.id}`);
+        followups = detail.followups || [];
+      } catch(e) {}
+
+      // ── Determine the anchor date (Day 0) ──────────────────────────────────
+      // Priority: actual first sent log → scheduled_at → created_at
+      let launchDate = null;
+      try {
+        const logs = await API.get(`/api/campaigns/${c.id}/logs?limit=1&step=0`);
+        if (logs.logs?.[0]?.sent_at) launchDate = new Date(logs.logs[0].sent_at);
+      } catch(e) {}
+      if (!launchDate && c.scheduled_at) launchDate = new Date(c.scheduled_at);
+      if (!launchDate) launchDate = new Date(c.created_at);
+
+      const launched = c.status !== 'draft' && c.status !== 'scheduled';
+      let cumulativeDays = 0;
+
+      const stepsHtml = [
+        // Step 0 — Initial Email
+        (() => {
+          const stepDate = new Date(launchDate);
+          const isSent = launched && c.sent_count > 0;
+          const isFuture = !isSent;
+          return `<div class="step-row">
+            <div class="step-num launch">1</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px;color:var(--text)">Initial Email</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.subject}</div>
+            </div>
+            <div class="flex gap-2 items-center flex-wrap" style="justify-content:flex-end">
+              ${dateChip(stepDate, true, isFuture, isSent)}
+              <span class="chip ${c.sent_count > 0 ? 'chip-green' : 'chip-gray'}">${c.sent_count} sent</span>
+            </div>
+          </div>`;
+        })(),
+
+        ...followups.map((fu, idx) => {
+          cumulativeDays += fu.delay_days;
+          const stepDate = addDays(launchDate, cumulativeDays);
+          const isPast   = stepDate <= today && launched;
+          const isFuture = stepDate > today || !launched;
+          const stepActive = fu.status === 'active';
+          return `
+          <div class="step-connector"></div>
+          <div class="step-row">
+            <div class="step-num followup">${idx + 2}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px;color:var(--text)">Follow-up #${idx + 1}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fu.subject}</div>
+            </div>
+            <div class="flex gap-2 items-center flex-wrap" style="justify-content:flex-end">
+              <span style="font-size:11px;color:var(--text-muted)">+${fu.delay_days}d</span>
+              ${dateChip(stepDate, false, isFuture, isPast && stepActive)}
+              <span class="chip ${stepActive ? (isPast ? 'chip-green' : 'chip-blue') : 'chip-gray'}">
+                ${stepActive ? (isPast ? 'Sent' : 'Scheduled') : fu.status}
+              </span>
+            </div>
+          </div>`;
+        })
+      ].join('');
+
+      // Total campaign duration
+      const totalDays = followups.reduce((sum, fu) => sum + fu.delay_days, 0);
+      const endDate = addDays(launchDate, totalDays);
+
+      return `
+        <div class="sequence-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div style="font-weight:700;font-size:15px;color:var(--text)">${c.name}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${followups.length} follow-up step${followups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; ${statusBadge(c.status)} &nbsp;&middot;&nbsp; <span style="color:var(--text-secondary)">${totalDays > 0 ? `${totalDays}-day sequence` : 'Single send'}</span></div>
+            </div>
+            <div class="flex gap-2">
+              ${c.status === 'draft' ? `<button class="btn btn-success btn-sm" onclick="launchCampaign(${c.id})">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Launch
+              </button>` : ''}
+              <a href="/campaigns" class="btn btn-ghost btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </a>
+            </div>
+          </div>
+          <div>${stepsHtml}</div>
+          <div class="flex gap-4 mt-3" style="padding-top:12px;border-top:1px solid var(--divider);flex-wrap:wrap;row-gap:4px">
+            <div style="font-size:12px;color:var(--text-muted)">
+              <span style="font-weight:700;color:var(--text)">${c.sent_count}</span> sent &nbsp;
+              <span style="font-weight:700;color:var(--green)">${c.open_count}</span> opened &nbsp;
+              <span style="font-weight:700;color:var(--blue)">${c.click_count}</span> clicked
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-left:auto">
+              Launched: ${fmtDate(launchDate)}
+              ${totalDays > 0 ? ` &nbsp;&rarr;&nbsp; Ends: ${fmtDate(endDate)}` : ''}
+            </div>
+          </div>
+        </div>`;
+    }));
+
+    container.innerHTML = cards.join('');
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><h3>Error loading</h3><p>${e.message}</p></div>`;
+  }
+}
+
+async function launchCampaign(id) {
+  if (!confirm('Launch this campaign now?')) return;
+  try {
+    await API.post(`/api/campaigns/${id}/send`);
+    showToast('success','Launched!','Follow-ups will run automatically.');
+    loadFollowups();
+  } catch(e) { showToast('error','Error',e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', loadFollowups);
+</script>
+</body>
+</html>

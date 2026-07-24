@@ -1,0 +1,37 @@
+{
+  "name": "titanmail-email-marketing-tool",
+  "version": "1.0.0",
+  "description": "Self-hosted email marketing automation tool powered by TitanMail SMTP",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "setup": "node server/db.js",
+    "postinstall": "mkdir -p data uploads"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["email", "marketing", "automation", "titanmail", "smtp"],
+  "author": "TitanMail Marketing Tool",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7",
+    "sqlite3": "^5.1.7",
+    "node-cron": "^3.0.3",
+    "multer": "^1.4.5-lts.1",
+    "csv-parser": "^3.0.0",
+    "handlebars": "^4.7.8",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0",
+    "node-imap": "^0.9.6",
+    "mailparser": "^3.6.5",
+    "express-fileupload": "^1.4.3",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

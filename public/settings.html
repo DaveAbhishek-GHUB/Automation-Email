@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Settings — TitanMail</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+      <div class="logo-text"><h2>TitanMail</h2><span>Marketing Automation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
+      <a href="/contacts" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</a>
+      <a href="/campaigns" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Campaigns</a>
+      <a href="/followups" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Follow-ups</a>
+      <div class="nav-section-label">Insights</div>
+      <a href="/analytics" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analytics</a>
+      <div class="nav-section-label">System</div>
+      <a href="/settings" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg> Settings</a>
+    </nav>
+    <div class="sidebar-footer"><div class="smtp-status" id="smtp-status"><div class="status-dot"></div> Checking...</div></div>
+  </aside>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg>
+        Settings
+      </div>
+    </header>
+
+    <div class="page-content" style="max-width:720px">
+
+      <!-- Gmail Tracking Fix — App URL -->
+      <div class="card mb-5" style="border-color:var(--blue);border-width:2px">
+        <div class="section-title mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          Public App URL (for Gmail Tracking)
+        </div>
+        <div class="alert alert-warning mb-3" style="margin-top:8px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div><strong>Gmail users can't reach localhost.</strong> Set a public URL here so tracking links in emails work for all recipients including Gmail users. Use <a href="https://ngrok.com" target="_blank" style="color:var(--blue)">ngrok</a> or deploy to a server.</div>
+        </div>
+        <div class="form-group mb-3">
+          <label>Public URL <span style="font-size:11px;color:var(--text-muted)">(without trailing slash)</span></label>
+          <input type="text" class="input" id="app-url" placeholder="https://xxxx.ngrok-free.app or https://yourdomain.com" />
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            To get a free ngrok URL: open Terminal → run <code>brew install ngrok</code> → run <code>ngrok http 3000</code> → paste the https URL above
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveAppUrl()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save URL
+        </button>
+      </div>
+
+      <!-- SMTP Config -->
+      <div class="card mb-5">
+        <div class="section-title mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          SMTP / Email Server
+        </div>
+        <div class="alert alert-info mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>Using GoDaddy Professional Email. Host: <strong>smtpout.secureserver.net</strong> · Port: <strong>465</strong> · SSL: On</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>SMTP Host</label><input type="text" class="input" id="smtp-host" placeholder="smtpout.secureserver.net" /></div>
+          <div class="form-group"><label>Port</label><input type="number" class="input" id="smtp-port" placeholder="465" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email (Username)</label><input type="email" class="input" id="smtp-user" placeholder="info@varadatech.com" /></div>
+          <div class="form-group"><label>Password</label><input type="password" class="input" id="smtp-pass" placeholder="••••••••••" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>SSL / TLS</label>
+            <select class="select" id="smtp-secure">
+              <option value="true">SSL (Port 465) — Recommended</option>
+              <option value="false">TLS (Port 587)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>From Name</label><input type="text" class="input" id="from-name" placeholder="VaradaTech" /></div>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button class="btn btn-ghost" id="test-btn" onclick="testSMTP()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Test Connection
+          </button>
+          <button class="btn btn-primary" id="save-smtp-btn" onclick="saveSettings()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Settings
+          </button>
+        </div>
+        <div id="smtp-result" class="mt-3"></div>
+      </div>
+
+      <!-- Sending Settings -->
+      <div class="card mb-5">
+        <div class="section-title mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Sending Limits
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Batch Size</label>
+            <input type="number" class="input" id="batch-size" value="50" min="1" max="200" />
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Emails sent per batch (GoDaddy limit: ~500/day)</div>
+          </div>
+          <div class="form-group">
+            <label>Delay Between Batches (ms)</label>
+            <input type="number" class="input" id="batch-delay" value="1000" min="500" />
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Milliseconds to wait between each email (1000 = 1 second)</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSendingSettings()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Limits
+        </button>
+      </div>
+
+      <!-- Scheduler Status -->
+      <div class="card mb-5">
+        <div class="section-title mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Scheduler Status
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="flex items-center justify-between" style="padding:10px 0;border-bottom:1px solid var(--divider)">
+            <div>
+              <div style="font-weight:600;font-size:13px">Follow-up Processor</div>
+              <div style="font-size:12px;color:var(--text-muted)">Checks for due follow-up emails every hour</div>
+            </div>
+            <span class="badge badge-active">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Running
+            </span>
+          </div>
+          <div class="flex items-center justify-between" style="padding:10px 0">
+            <div>
+              <div style="font-weight:600;font-size:13px">Scheduled Campaign Trigger</div>
+              <div style="font-size:12px;color:var(--text-muted)">Fires scheduled campaigns every minute</div>
+            </div>
+            <span class="badge badge-active">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Running
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CSV Format Guide -->
+      <div class="card">
+        <div class="section-title mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          CSV Format Guide
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">Your CSV must have an <code>email</code> column. Other columns are optional.</p>
+        <div style="background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);overflow:auto">
+          <table style="min-width:100%;font-size:12px;font-family:'Courier New',monospace">
+            <thead style="background:#F8FAFF"><tr>
+              <th style="padding:8px 12px;border-bottom:1px solid var(--divider);text-align:left;font-weight:700;color:var(--text-muted);letter-spacing:.5px">name</th>
+              <th style="padding:8px 12px;border-bottom:1px solid var(--divider);text-align:left;font-weight:700;color:var(--text-muted);letter-spacing:.5px">email</th>
+              <th style="padding:8px 12px;border-bottom:1px solid var(--divider);text-align:left;font-weight:700;color:var(--text-muted);letter-spacing:.5px">company</th>
+              <th style="padding:8px 12px;border-bottom:1px solid var(--divider);text-align:left;font-weight:700;color:var(--text-muted);letter-spacing:.5px">phone</th>
+              <th style="padding:8px 12px;border-bottom:1px solid var(--divider);text-align:left;font-weight:700;color:var(--text-muted);letter-spacing:.5px">city</th>
+              <th style="padding:8px 12px;border-bottom:1px solid var(--divider);text-align:left;font-weight:700;color:var(--text-muted);letter-spacing:.5px">designation</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--divider)">
+                <td style="padding:7px 12px">Rahul Sharma</td>
+                <td style="padding:7px 12px;color:var(--blue)">rahul@example.com</td>
+                <td style="padding:7px 12px">Acme Ltd</td>
+                <td style="padding:7px 12px">9876543210</td>
+                <td style="padding:7px 12px">Mumbai</td>
+                <td style="padding:7px 12px">Manager</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 12px">Priya Patel</td>
+                <td style="padding:7px 12px;color:var(--blue)">priya@gmail.com</td>
+                <td style="padding:7px 12px">StartupXYZ</td>
+                <td style="padding:7px 12px">9988776655</td>
+                <td style="padding:7px 12px">Bangalore</td>
+                <td style="padding:7px 12px">Founder</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+          In emails, use <code>{{name}}</code>, <code>{{email}}</code>, <code>{{company}}</code>, <code>{{phone}}</code>, <code>{{city}}</code>, <code>{{designation}}</code> as variables.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+async function loadSettings() {
+  try {
+    const res = await API.get('/api/analytics/settings');
+    const s = res.settings || {};
+    document.getElementById('smtp-host').value  = s.smtp_host  || 'smtpout.secureserver.net';
+    document.getElementById('smtp-port').value  = s.smtp_port  || '465';
+    document.getElementById('smtp-user').value  = s.smtp_user  || 'info@varadatech.com';
+    document.getElementById('smtp-pass').value  = s.smtp_pass  || '';
+    document.getElementById('smtp-secure').value= s.smtp_secure=== 'false' ? 'false' : 'true';
+    document.getElementById('from-name').value  = s.from_name  || 'VaradaTech';
+    document.getElementById('batch-size').value = s.batch_size || '50';
+    document.getElementById('batch-delay').value= s.batch_delay_ms || '1000';
+    document.getElementById('app-url').value    = s.app_url    || '';
+  } catch(e) {}
+}
+
+async function saveAppUrl() {
+  const url = document.getElementById('app-url').value.trim().replace(/\/$/, '');
+  if (!url) return showToast('warning','Required','Please enter a URL');
+  try {
+    await API.post('/api/settings/app-url', { url });
+    showToast('success','Saved','Public URL saved — future emails will use this URL for tracking');
+  } catch(e) { showToast('error','Error',e.message); }
+}
+
+async function saveSettings() {
+  const btn = document.getElementById('save-smtp-btn');
+  setButtonLoading(btn, true, 'Saving…');
+  try {
+    await API.post('/api/settings/smtp', {
+      host: document.getElementById('smtp-host').value,
+      port: document.getElementById('smtp-port').value,
+      user: document.getElementById('smtp-user').value,
+      pass: document.getElementById('smtp-pass').value,
+      secure: document.getElementById('smtp-secure').value,
+      fromName: document.getElementById('from-name').value,
+    });
+    showToast('success','Saved','SMTP settings updated');
+  } catch(e) { showToast('error','Error',e.message); }
+  finally { setButtonLoading(btn, false); }
+}
+
+async function testSMTP() {
+  const btn = document.getElementById('test-btn');
+  const result = document.getElementById('smtp-result');
+  setButtonLoading(btn, true, 'Testing…');
+  result.innerHTML = '';
+  try {
+    const res = await API.post('/api/settings/test-smtp', {});
+    result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
+  } catch(e) {
+    result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${e.message}</span></div>`;
+  } finally { setButtonLoading(btn, false); }
+}
+
+async function saveSendingSettings() {
+  try {
+    await API.post('/api/settings/sending', {
+      batchSize: document.getElementById('batch-size').value,
+      batchDelayMs: document.getElementById('batch-delay').value,
+    });
+    showToast('success','Saved','Sending limits updated');
+  } catch(e) { showToast('error','Error',e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', loadSettings);
+</script>
+</body>
+</html>

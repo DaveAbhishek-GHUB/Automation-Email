@@ -1,0 +1,28 @@
+# ── Node / npm ─────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# ── Environment secrets ─────────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+
+# ── Database (Railway provides a persistent volume — don't commit DB file) ──────
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# ── User uploads (CSV files) ───────────────────────────────────────────────────
+uploads/
+
+# ── OS / Editor ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# ── PM2 (not used in production on Railway) ────────────────────────────────────
+ecosystem.config.js

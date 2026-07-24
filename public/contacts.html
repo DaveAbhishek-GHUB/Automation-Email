@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Contacts — TitanMail</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    .upload-zone { border:2px dashed var(--border); border-radius:var(--radius-lg);
+      padding:40px; text-align:center; cursor:pointer; transition:all .2s; background:var(--bg); }
+    .upload-zone:hover,.upload-zone.drag { border-color:var(--blue); background:var(--blue-faint); }
+    .upload-zone svg { color:var(--blue); width:36px; height:36px; margin-bottom:12px; }
+    .list-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border-radius:var(--radius-full); background:var(--blue-faint); border:1px solid var(--border);
+      font-size:11px; font-weight:600; color:var(--blue); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+      <div class="logo-text"><h2>TitanMail</h2><span>Marketing Automation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
+      <a href="/contacts" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</a>
+      <a href="/campaigns" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Campaigns</a>
+      <a href="/followups" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Follow-ups</a>
+      <div class="nav-section-label">Insights</div>
+      <a href="/analytics" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analytics</a>
+      <div class="nav-section-label">System</div>
+      <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg> Settings</a>
+    </nav>
+    <div class="sidebar-footer"><div class="smtp-status" id="smtp-status"><div class="status-dot"></div> Checking...</div></div>
+  </aside>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contacts
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" onclick="switchTab('lists')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Manage Lists
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="Modal.open('upload-modal')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload CSV
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="Modal.open('add-modal')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Contact
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Tab nav -->
+      <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border-light);padding-bottom:0">
+        <button id="tab-contacts" class="tab-btn active" onclick="switchTab('contacts')" style="padding:9px 18px;border:none;border-bottom:3px solid var(--blue);margin-bottom:-2px;background:transparent;font-weight:700;font-size:13px;color:var(--blue);cursor:pointer;border-radius:4px 4px 0 0;transition:all .2s">All Contacts</button>
+        <button id="tab-lists" class="tab-btn" onclick="switchTab('lists')" style="padding:9px 18px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;border-radius:4px 4px 0 0;transition:all .2s">Contact Lists</button>
+      </div>
+
+      <!-- All Contacts Panel -->
+      <div id="panel-contacts">
+      <!-- Stats row -->
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-icon blue"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="stat-info"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Contacts</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="stat-info"><div class="stat-value" id="stat-active">—</div><div class="stat-label">Active</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+          <div class="stat-info"><div class="stat-value" id="stat-lists">—</div><div class="stat-label">Contact Lists</div></div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--divider)">
+          <div style="font-weight:600;font-size:14px;color:var(--text)">All Contacts</div>
+          <div class="flex gap-2">
+            <input type="text" class="input" id="search-input" placeholder="Search name or email…" style="width:220px;padding:7px 12px" oninput="filterContacts()" />
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Name</th><th>Email</th><th>Company</th><th>Lists</th><th>Status</th><th>Added</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="contacts-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted)">Loading contacts…</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--divider)">
+          <div style="font-size:12px;color:var(--text-muted)" id="pagination-info">—</div>
+          <div class="flex gap-2">
+            <button class="btn btn-ghost btn-sm" id="prev-page" onclick="changePage(-1)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Prev
+            </button>
+            <button class="btn btn-ghost btn-sm" id="next-page" onclick="changePage(1)">
+              Next <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      </div><!-- /panel-contacts -->
+
+      <!-- Contact Lists Panel -->
+      <div id="panel-lists" style="display:none">
+        <div class="table-wrapper">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--divider)">
+            <div style="font-weight:600;font-size:14px">Contact Lists</div>
+            <div style="font-size:12px;color:var(--text-muted)">Delete a list to remove it (contacts are kept)</div>
+          </div>
+          <div id="lists-tbody" style="padding:8px 0">
+            <div style="text-align:center;padding:40px;color:var(--text-muted)">Loading lists…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Upload CSV Modal -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">Upload Contacts CSV</div>
+      <button class="modal-close" onclick="Modal.close('upload-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group mb-4">
+        <label>List Name (optional)</label>
+        <input type="text" class="input" id="list-name" placeholder="e.g. Leads July 2026" />
+      </div>
+
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-file').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-weight:600;color:var(--text);margin-bottom:4px">Drop CSV file here or click to browse</div>
+        <div style="font-size:12px;color:var(--text-muted)">Required columns: <code>email</code> &nbsp;·&nbsp; Optional: name, company, phone, city, designation</div>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(this)" />
+      </div>
+      <div id="file-name" style="margin-top:10px;font-size:13px;color:var(--blue);font-weight:600"></div>
+      <div id="upload-progress" class="hidden mt-3">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px" id="upload-status">Uploading…</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="Modal.close('upload-modal')">Cancel</button>
+      <button class="btn btn-primary" id="upload-btn" onclick="uploadCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import Contacts
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Add Contact</div>
+      <button class="modal-close" onclick="Modal.close('add-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><input type="text" class="input" id="add-name" placeholder="Rahul Sharma" /></div>
+        <div class="form-group"><label>Email *</label><input type="email" class="input" id="add-email" placeholder="rahul@example.com" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Company</label><input type="text" class="input" id="add-company" placeholder="Acme Pvt Ltd" /></div>
+        <div class="form-group"><label>Phone</label><input type="text" class="input" id="add-phone" placeholder="+91 98765 43210" /></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="Modal.close('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addContact()">Add Contact</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+let allContacts = [], currentPage = 1, pageSize = 50, filteredContacts = [];
+
+function switchTab(tab) {
+  const tabs = ['contacts','lists'];
+  tabs.forEach(t => {
+    const btn = document.getElementById('tab-' + t);
+    const panel = document.getElementById('panel-' + t);
+    const isActive = t === tab;
+    btn.style.color = isActive ? 'var(--blue)' : 'var(--text-muted)';
+    btn.style.fontWeight = isActive ? '700' : '600';
+    btn.style.borderBottom = isActive ? '3px solid var(--blue)' : '3px solid transparent';
+    panel.style.display = isActive ? 'block' : 'none';
+  });
+  if (tab === 'lists') loadLists();
+}
+
+async function loadContacts() {
+  try {
+    const { contacts, total } = await API.get(`/api/contacts?limit=500&offset=0`);
+    allContacts = contacts || [];
+    filteredContacts = allContacts;
+    renderTable();
+    // Stats
+    const active = allContacts.filter(c => c.status === 'active').length;
+    document.getElementById('stat-total').textContent = total || allContacts.length;
+    document.getElementById('stat-active').textContent = active;
+    const { lists } = await API.get('/api/contacts/lists/all');
+    document.getElementById('stat-lists').textContent = lists?.length || 0;
+  } catch(e) { showToast('error','Error',e.message); }
+}
+
+function filterContacts() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  filteredContacts = q ? allContacts.filter(c => (c.name||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)) : allContacts;
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * pageSize;
+  const page = filteredContacts.slice(start, start + pageSize);
+  const tbody = document.getElementById('contacts-tbody');
+
+  if (!page.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted)">No contacts found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = page.map(c => `
+    <tr>
+      <td><div style="font-weight:600;font-size:13px;color:var(--text)">${c.name || '—'}</div></td>
+      <td style="font-size:13px;color:var(--blue)">${c.email}</td>
+      <td style="font-size:13px">${c.company || '—'}</td>
+      <td>${c.tags ? c.tags.split(',').map(t => `<span class="list-chip">${t.trim()}</span>`).join(' ') : '—'}</td>
+      <td>${statusBadge(c.status || 'active')}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${formatDate(c.created_at)}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteContact(${c.id})">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  const total = filteredContacts.length;
+  const totalPages = Math.ceil(total / pageSize);
+  document.getElementById('pagination-info').textContent = `Showing ${start+1}–${Math.min(start+pageSize,total)} of ${total}`;
+  document.getElementById('prev-page').disabled = currentPage <= 1;
+  document.getElementById('next-page').disabled = currentPage >= totalPages;
+}
+
+function changePage(dir) { currentPage += dir; renderTable(); }
+
+async function deleteContact(id) {
+  if (!confirm('Delete this contact?')) return;
+  try { await API.delete(`/api/contacts/${id}`); loadContacts(); showToast('success','Deleted',''); }
+  catch(e) { showToast('error','Error',e.message); }
+}
+
+let selectedFile = null;
+function handleFileSelect(input) { selectedFile = input.files[0]; document.getElementById('file-name').textContent = selectedFile ? 'Selected: ' + selectedFile.name : ''; }
+function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag'); selectedFile = e.dataTransfer.files[0]; document.getElementById('file-name').textContent = selectedFile ? 'Selected: ' + selectedFile.name : ''; }
+
+async function uploadCSV() {
+  if (!selectedFile) return showToast('warning','Select File','Please select a CSV file first');
+  const btn = document.getElementById('upload-btn');
+  setButtonLoading(btn, true, 'Importing…');
+  document.getElementById('upload-progress').classList.remove('hidden');
+  const fd = new FormData();
+  fd.append('csv', selectedFile);
+  const listName = document.getElementById('list-name').value.trim();
+  if (listName) fd.append('listName', listName);
+  try {
+    const res = await fetch('/api/contacts/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('progress-fill').style.width = '100%';
+    const inserted = data.inserted || data.imported || 0;
+    document.getElementById('upload-status').textContent = `Imported: ${inserted}, Skipped: ${data.skipped || 0}`;
+    showToast('success','Import Complete',`${inserted} contacts imported`);
+    Modal.close('upload-modal');
+    selectedFile = null;
+    document.getElementById('file-name').textContent = '';
+    loadContacts();
+  } catch(e) { showToast('error','Import Failed',e.message); }
+  finally { setButtonLoading(btn, false); }
+}
+
+async function addContact() {
+  const email = document.getElementById('add-email').value.trim();
+  if (!email) return showToast('warning','Required','Email is required');
+  try {
+    await API.post('/api/contacts', { name: document.getElementById('add-name').value, email, company: document.getElementById('add-company').value, phone: document.getElementById('add-phone').value });
+    Modal.close('add-modal');
+    loadContacts();
+    showToast('success','Added','Contact added successfully');
+  } catch(e) { showToast('error','Error',e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', loadContacts);
+
+async function loadLists() {
+  const el = document.getElementById('lists-tbody');
+  try {
+    const { lists } = await API.get('/api/contacts/lists/all');
+    if (!lists?.length) {
+      el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">No contact lists yet. Upload a CSV with a list name to create one.</div>`;
+      return;
+    }
+    el.innerHTML = lists.map(l => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--divider);">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:var(--text)">${l.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${l.contact_count || 0} contacts &nbsp;&middot;&nbsp; Created: ${formatDate(l.created_at)}</div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-danger btn-sm" onclick="deleteList(${l.id}, '${(l.name||'').replace(/'/g,'')}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete List
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<div style="padding:24px;color:var(--red)">Error: ${e.message}</div>`; }
+}
+
+async function deleteList(id, name) {
+  if (!confirm(`Delete list "${name}"? Contacts in this list will NOT be deleted.`)) return;
+  try {
+    await API.delete(`/api/contacts/lists/${id}`);
+    showToast('success','List Deleted',`"${name}" removed`);
+    loadLists();
+    loadContacts();
+  } catch(e) { showToast('error','Error',e.message); }
+}
+</script>
+</body>
+</html>

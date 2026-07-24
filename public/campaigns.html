@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campaigns — TitanMail Marketing Tool</title>
+  <link rel="stylesheet" href="/css/style.css" />
+<style>
+    /* ── Email editor tabs ── */
+    .email-editor-tabs { display:flex; gap:4px; margin-bottom:12px; }
+    .email-editor-tab { padding:7px 18px; border-radius:8px; border:1px solid var(--border-light);
+      background:transparent; color:var(--text-muted); cursor:pointer; font-size:13px; transition:all .2s; }
+    .email-editor-tab.active { background:var(--blue-faint); border-color:var(--blue); color:var(--blue); }
+
+    /* ── Timeline preview ── */
+    .timeline-preview { display:flex; align-items:center; gap:0; padding:20px; overflow-x:auto;
+      background:var(--bg); border:1px solid var(--border-light); border-radius:var(--radius-md); flex-wrap:nowrap; }
+    .tl-dot { display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0; }
+    .tl-circle { width:40px; height:40px; border-radius:50%; display:flex; align-items:center;
+      justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+    .tl-circle.launch { background:var(--blue-faint); border:2px solid var(--blue); color:var(--blue); }
+    .tl-circle.followup { background:var(--green-bg); border:2px solid var(--green); color:var(--green); }
+    .tl-label { font-size:11px; color:var(--text-muted); white-space:nowrap; text-align:center; line-height:1.3; }
+    .tl-arrow { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; min-width:48px; flex-shrink:0; }
+    .tl-line { height:2px; width:100%; background:linear-gradient(to right,var(--blue-light),var(--green-light)); }
+    .tl-gap-label { font-size:11px; color:var(--yellow); white-space:nowrap; font-weight:600; }
+
+    /* ── Sequence config ── */
+    .gap-selector { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .gap-num-input { width:72px; background:var(--bg); border:1.5px solid var(--border-light);
+      border-radius:8px; padding:8px 12px; color:var(--text); font-size:18px;
+      font-weight:800; text-align:center; outline:none; }
+    .gap-num-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+    .counter-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid var(--border-light);
+      background:var(--bg-card); color:var(--text); font-size:18px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:all .2s; }
+    .counter-btn:hover { background:var(--blue-faint); border-color:var(--blue); color:var(--blue); }
+
+    /* ── Variable pills ── */
+    .var-pill { padding:5px 11px; border-radius:20px; background:var(--blue-faint);
+      border:1px solid var(--border); color:var(--blue); font-size:12px;
+      cursor:pointer; transition:all .2s; user-select:none; }
+    .var-pill:hover { background:#DBEAFE; transform:scale(1.04); }
+
+    .code-editor { min-height:220px; }
+    .email-preview-frame { width:100%; height:340px; border:none; border-radius:8px; background:#fff; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+      <div class="logo-text"><h2>TitanMail</h2><span>Marketing Automation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
+      <a href="/contacts" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</a>
+      <a href="/campaigns" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Campaigns</a>
+      <a href="/followups" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Follow-ups</a>
+      <div class="nav-section-label">Insights</div>
+      <a href="/analytics" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analytics</a>
+      <div class="nav-section-label">System</div>
+      <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg> Settings</a>
+    </nav>
+    <div class="sidebar-footer"><div class="smtp-status" id="smtp-status"><div class="status-dot"></div> Checking...</div></div>
+  </aside>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        Campaigns
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Campaign
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Campaign</th><th>Sequence</th><th>Status</th>
+              <th>Sent</th><th>Opens</th><th>Clicks</th><th>Created</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="campaigns-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:60px;color:var(--text-muted)">Loading campaigns…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="campaigns-empty" class="hidden">
+        <div class="empty-state">
+          <div class="empty-icon">📧</div>
+          <h3>No campaigns yet</h3>
+          <p>Create a campaign: write your launch email + one follow-up that auto-repeats with your chosen gap</p>
+          <button class="btn btn-primary mt-4" onclick="openCreateModal()">✚ New Campaign</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CAMPAIGN MODAL ═══════════ -->
+<div class="modal-overlay" id="campaign-modal">
+  <div class="modal" style="max-width:900px">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">✚ New Campaign</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Step tabs -->
+      <div class="editor-tabs mb-6">
+        <button class="editor-tab active" id="tab-1" onclick="goStep(1)">1. Details</button>
+        <button class="editor-tab" id="tab-2" onclick="goStep(2)">2. Launch Email</button>
+        <button class="editor-tab" id="tab-3" onclick="goStep(3)">3. Follow-up Email</button>
+        <button class="editor-tab" id="tab-4" onclick="goStep(4)">4. Sequence &amp; Gap</button>
+        <button class="editor-tab" id="tab-5" onclick="goStep(5)">5. Recipients</button>
+        <button class="editor-tab" id="tab-6" onclick="goStep(6)">6. Launch</button>
+      </div>
+
+      <!-- ── STEP 1: Details ──────────────────────────────────── -->
+      <div id="step-1">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Campaign Name *</label>
+            <input type="text" class="input" id="c-name" placeholder="e.g. Product Launch Q3" />
+          </div>
+          <div class="form-group">
+            <label>From Name</label>
+            <input type="text" class="input" id="c-from-name" value="VaradaTech" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>From Email</label>
+            <input type="email" class="input" id="c-from-email" value="info@varadatech.com" />
+          </div>
+          <div class="form-group">
+            <label>Reply-To</label>
+            <input type="email" class="input" id="c-reply-to" value="info@varadatech.com" />
+          </div>
+        </div>
+        <div class="card mt-4" style="background:rgba(99,102,241,0.05);border-color:rgba(99,102,241,0.2)">
+          <div style="font-size:14px;font-weight:700;color:var(--accent-light);margin-bottom:8px">💡 How This Works</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.9">
+            <strong>Launch Email</strong> — unique content, sent once on Day 0<br/>
+            <strong>Follow-up Email</strong> — same email, repeats every X days automatically<br/>
+            <strong>Gap</strong> — you choose how many days between each send<br/>
+            <strong>Count</strong> — you choose how many follow-ups total<br/>
+            <span style="color:var(--green-light)">✅ Once launched, everything is automatic — no daily login needed!</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Launch Email ─────────────────────────────── -->
+      <div id="step-2" class="hidden">
+        <div class="card mb-4" style="background:rgba(99,102,241,0.06);border-color:rgba(99,102,241,0.3);padding:12px 16px">
+          <div style="font-size:13px;color:#818cf8;font-weight:600">📧 Launch Email — Sent ONCE on Day 0 when you launch</div>
+        </div>
+
+        <!-- Variables -->
+        <div class="mb-3">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">📌 Click to copy variable into subject/body:</div>
+          <div class="flex gap-2" style="flex-wrap:wrap">
+            <span class="var-pill" onclick="copyVar('{{name}}')">{{name}}</span>
+            <span class="var-pill" onclick="copyVar('{{email}}')">{{email}}</span>
+            <span class="var-pill" onclick="copyVar('{{company}}')">{{company}}</span>
+            <span class="var-pill" onclick="copyVar('{{phone}}')">{{phone}}</span>
+            <span class="var-pill" onclick="copyVar('{{city}}')">{{city}}</span>
+            <span class="var-pill" onclick="copyVar('{{designation}}')">{{designation}}</span>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>Subject Line *</label>
+          <input type="text" class="input" id="launch-subject" placeholder="Hi {{name}}, introducing VaradaTech 👋" />
+        </div>
+
+        <div class="email-editor-tabs">
+          <button class="email-editor-tab active" onclick="switchTab('launch','html',this)">HTML Code</button>
+          <button class="email-editor-tab" onclick="switchTab('launch','preview',this)">Preview</button>
+          <button class="email-editor-tab" onclick="loadTemplate('launch')">📋 Template</button>
+        </div>
+        <div id="launch-html-pane">
+          <textarea class="code-editor" id="launch-body" placeholder="<h1>Hi {{name}},</h1><p>Your launch email here…</p>"></textarea>
+        </div>
+        <div id="launch-preview-pane" class="hidden">
+          <iframe id="launch-preview-frame" class="email-preview-frame"></iframe>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: Follow-up Email ─────────────────────────── -->
+      <div id="step-3" class="hidden">
+        <div class="card mb-4" style="background:rgba(16,185,129,0.06);border-color:rgba(16,185,129,0.3);padding:12px 16px">
+          <div style="font-size:13px;color:#34d399;font-weight:600">🔄 Follow-up Email — Same email repeats every X days automatically</div>
+        </div>
+
+        <!-- Variables -->
+        <div class="mb-3">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">📌 Click to copy variable:</div>
+          <div class="flex gap-2" style="flex-wrap:wrap">
+            <span class="var-pill" onclick="copyVar('{{name}}')">{{name}}</span>
+            <span class="var-pill" onclick="copyVar('{{email}}')">{{email}}</span>
+            <span class="var-pill" onclick="copyVar('{{company}}')">{{company}}</span>
+            <span class="var-pill" onclick="copyVar('{{city}}')">{{city}}</span>
+            <span class="var-pill" onclick="copyVar('{{designation}}')">{{designation}}</span>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>Follow-up Subject Line *</label>
+          <input type="text" class="input" id="followup-subject" placeholder="Quick follow-up, {{name}} 🔔" />
+        </div>
+
+        <div class="email-editor-tabs">
+          <button class="email-editor-tab active" onclick="switchTab('followup','html',this)">HTML Code</button>
+          <button class="email-editor-tab" onclick="switchTab('followup','preview',this)">Preview</button>
+          <button class="email-editor-tab" onclick="loadTemplate('followup')">📋 Template</button>
+        </div>
+        <div id="followup-html-pane">
+          <textarea class="code-editor" id="followup-body" placeholder="<h1>Hi {{name}},</h1><p>Just following up on my previous email…</p>"></textarea>
+        </div>
+        <div id="followup-preview-pane" class="hidden">
+          <iframe id="followup-preview-frame" class="email-preview-frame"></iframe>
+        </div>
+      </div>
+
+      <!-- ── STEP 4: Sequence & Gap Config ───────────────────── -->
+      <div id="step-4" class="hidden">
+
+        <div class="form-row mb-6">
+          <!-- Gap between emails -->
+          <div class="form-group">
+            <label>Gap Between Each Email</label>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">How many days to wait before sending the next email?</div>
+            <div class="gap-selector">
+              <button class="counter-btn" onclick="adjustGap(-1)">−</button>
+              <input type="number" class="gap-num-input" id="gap-days" value="1" min="1" max="90" oninput="renderTimeline()" />
+              <button class="counter-btn" onclick="adjustGap(1)">+</button>
+              <span style="font-size:14px;color:var(--text-secondary);margin-left:4px">days</span>
+            </div>
+          </div>
+
+          <!-- Number of follow-ups -->
+          <div class="form-group">
+            <label>Number of Follow-ups</label>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">How many times should the follow-up email repeat?</div>
+            <div class="gap-selector">
+              <button class="counter-btn" onclick="adjustCount(-1)">−</button>
+              <input type="number" class="gap-num-input" id="followup-count" value="3" min="0" max="20" oninput="renderTimeline()" />
+              <button class="counter-btn" onclick="adjustCount(1)">+</button>
+              <span style="font-size:14px;color:var(--text-secondary);margin-left:4px">follow-ups</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Timeline Preview -->
+        <div class="section-title mb-3">📅 Your Email Timeline</div>
+        <div class="timeline-preview" id="timeline-preview"></div>
+
+        <div class="card mt-4" style="background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.2)">
+          <div style="font-size:13px;color:var(--yellow)">
+            ⏰ The follow-up scheduler runs <strong>every hour</strong>. 
+            Emails will be sent within 1 hour of their scheduled day.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 5: Recipients ───────────────────────────────── -->
+      <div id="step-5" class="hidden">
+        <div class="card mb-4" style="background:rgba(99,102,241,0.05)">
+          <div class="section-title mb-3">📋 Select Contact Lists</div>
+          <div id="lists-checkboxes"><div style="color:var(--text-muted)">Loading lists…</div></div>
+        </div>
+        <div class="card" style="background:rgba(16,185,129,0.04)">
+          <div class="section-title mb-1">👥 Or Send to All Active Contacts</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Leave all lists unchecked to include every active contact in your database.</div>
+          <div id="total-recipients" style="font-size:22px;font-weight:800;color:var(--accent-light)">—</div>
+        </div>
+      </div>
+
+      <!-- ── STEP 6: Launch ───────────────────────────────────── -->
+      <div id="step-6" class="hidden">
+        <div class="section-title mb-3">📋 Campaign Summary</div>
+        <div id="launch-summary"></div>
+
+        <div class="form-group mt-5">
+          <label>When to Send the Launch Email</label>
+          <div class="flex gap-3 mt-2" style="flex-wrap:wrap">
+            <label class="flex items-center gap-2" style="cursor:pointer;padding:14px 20px;border:1px solid var(--border);border-radius:var(--radius-md);flex:1;min-width:150px;transition:border-color .2s" id="mode-now-card">
+              <input type="radio" name="send-mode" value="now" id="mode-now" onchange="updateModeUI()" checked />
+              <div><div style="font-weight:700">⚡ Right Now</div><div class="text-xs text-muted">Launch email sends immediately</div></div>
+            </label>
+            <label class="flex items-center gap-2" style="cursor:pointer;padding:14px 20px;border:1px solid var(--border);border-radius:var(--radius-md);flex:1;min-width:150px;transition:border-color .2s" id="mode-schedule-card">
+              <input type="radio" name="send-mode" value="once" id="mode-schedule" onchange="updateModeUI()" />
+              <div><div style="font-weight:700">📅 Scheduled</div><div class="text-xs text-muted">Pick a future date/time</div></div>
+            </label>
+          </div>
+        </div>
+        <div id="schedule-opts" class="hidden form-group mt-3">
+          <label>Start Date &amp; Time</label>
+          <input type="datetime-local" class="input" id="c-scheduled-at" style="max-width:300px" />
+        </div>
+
+        <div class="card mt-4" style="background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.2)">
+          <div style="font-size:14px;font-weight:700;color:var(--green-light)">✅ 100% Automatic After Launch</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px">
+            All follow-up emails are sent automatically by the scheduler. You don't need to do anything after clicking Launch.
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="prev-btn" onclick="prevStep()" style="display:none">← Back</button>
+      <div class="flex gap-2 ml-auto">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-secondary" id="next-btn" onclick="nextStep()">Next →</button>
+        <button class="btn btn-primary hidden" id="save-btn" onclick="saveCampaign()">🚀 Launch Campaign</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Logs Modal -->
+<div class="modal-overlay" id="logs-modal">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-header">
+      <div class="modal-title" id="logs-modal-title">📋 Send Logs</div>
+      <button class="modal-close" onclick="Modal.close('logs-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="logs-content">Loading…</div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+// ─── State ───────────────────────────────────────────────────
+const TOTAL_STEPS = 6;
+let currentStep = 1;
+
+// ─── Step navigation ─────────────────────────────────────────
+function goStep(n) {
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    document.getElementById(`step-${i}`).classList.toggle('hidden', i !== n);
+    document.getElementById(`tab-${i}`).classList.toggle('active', i === n);
+  }
+  currentStep = n;
+  document.getElementById('prev-btn').style.display = n > 1 ? '' : 'none';
+  document.getElementById('next-btn').classList.toggle('hidden', n === TOTAL_STEPS);
+  document.getElementById('save-btn').classList.toggle('hidden', n !== TOTAL_STEPS);
+
+  if (n === 4) renderTimeline();
+  if (n === 5) loadLists();
+  if (n === 6) renderSummary();
+}
+function nextStep() { if (currentStep < TOTAL_STEPS) goStep(currentStep + 1); }
+function prevStep() { if (currentStep > 1) goStep(currentStep - 1); }
+
+// ─── Gap / Count adjusters ───────────────────────────────────
+function adjustGap(delta) {
+  const el = document.getElementById('gap-days');
+  el.value = Math.max(1, Math.min(90, parseInt(el.value || 1) + delta));
+  renderTimeline();
+}
+function adjustCount(delta) {
+  const el = document.getElementById('followup-count');
+  el.value = Math.max(0, Math.min(20, parseInt(el.value || 0) + delta));
+  renderTimeline();
+}
+
+// ─── Timeline preview ────────────────────────────────────────
+function renderTimeline() {
+  const gap   = parseInt(document.getElementById('gap-days')?.value || 1);
+  const count = parseInt(document.getElementById('followup-count')?.value || 3);
+  const el    = document.getElementById('timeline-preview');
+  if (!el) return;
+
+  let html = `
+    <div class="tl-dot">
+      <div class="tl-circle launch">1</div>
+      <div class="tl-label">Launch Email<br/><strong>Day 0</strong></div>
+    </div>`;
+
+  for (let i = 1; i <= count; i++) {
+    const day = i * gap;
+    html += `
+      <div class="tl-arrow">
+        <div class="tl-gap-label">+${gap}d</div>
+        <div class="tl-line"></div>
+      </div>
+      <div class="tl-dot">
+        <div class="tl-circle followup">${i + 1}</div>
+        <div class="tl-label">Follow-up ${i}<br/><strong>Day ${day}</strong></div>
+      </div>`;
+  }
+
+  if (count === 0) {
+    html += `<div style="margin-left:24px;font-size:13px;color:var(--text-muted);align-self:center">No follow-ups — just the launch email</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// ─── Launch summary (Step 6) ─────────────────────────────────
+function renderSummary() {
+  const name     = document.getElementById('c-name').value || '(no name)';
+  const lSubj    = document.getElementById('launch-subject').value || '(no subject)';
+  const fuSubj   = document.getElementById('followup-subject').value || '(no subject)';
+  const gap      = parseInt(document.getElementById('gap-days')?.value || 1);
+  const count    = parseInt(document.getElementById('followup-count')?.value || 0);
+  const lists    = [...document.querySelectorAll('.list-check:checked')].length;
+
+  const el = document.getElementById('launch-summary');
+  el.innerHTML = `
+    <div class="form-row mb-4">
+      <div class="card" style="background:rgba(99,102,241,0.06)">
+        <div class="text-xs text-muted mb-1">Campaign</div>
+        <div style="font-weight:700">${name}</div>
+      </div>
+      <div class="card" style="background:rgba(16,185,129,0.06)">
+        <div class="text-xs text-muted mb-1">Sequence</div>
+        <div style="font-weight:700">1 launch + ${count} follow-up${count!==1?'s':''}</div>
+        <div class="text-xs text-muted">Every ${gap} day${gap!==1?'s':''}</div>
+      </div>
+      <div class="card" style="background:rgba(245,158,11,0.06)">
+        <div class="text-xs text-muted mb-1">Total Duration</div>
+        <div style="font-weight:700">${count * gap} days</div>
+        <div class="text-xs text-muted">${lists > 0 ? lists + ' list(s) selected' : 'All active contacts'}</div>
+      </div>
+    </div>
+
+    <div class="card mb-3" style="background:rgba(99,102,241,0.04)">
+      <div class="text-xs text-muted mb-1">📧 Launch Email Subject</div>
+      <div style="font-size:14px;font-weight:600">${lSubj}</div>
+    </div>
+    ${count > 0 ? `
+    <div class="card" style="background:rgba(16,185,129,0.04)">
+      <div class="text-xs text-muted mb-1">🔄 Follow-up Email Subject (repeats ${count}×)</div>
+      <div style="font-size:14px;font-weight:600">${fuSubj}</div>
+    </div>` : ''}
+  `;
+}
+
+// ─── Email editor tab toggle ─────────────────────────────────
+function switchTab(which, tab, btn) {
+  const isHtml = tab === 'html';
+  document.getElementById(`${which}-html-pane`).classList.toggle('hidden', !isHtml);
+  document.getElementById(`${which}-preview-pane`).classList.toggle('hidden', isHtml);
+  if (!isHtml) {
+    const frame = document.getElementById(`${which}-preview-frame`);
+    frame.srcdoc = document.getElementById(`${which}-body`).value || '<p style="font-family:Arial;padding:32px;color:#888">Nothing to preview yet.</p>';
+  }
+  // Toggle tab active state
+  btn.closest('.email-editor-tabs').querySelectorAll('.email-editor-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── Variable copy ───────────────────────────────────────────
+function copyVar(v) {
+  navigator.clipboard.writeText(v).then(() => showToast('success', 'Copied!', v));
+}
+
+// ─── Load templates ──────────────────────────────────────────
+const TEMPLATES = {
+  launch: `<!DOCTYPE html><html><head><style>
+body{font-family:Arial,sans-serif;background:#f9fafb;margin:0}
+.c{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.hd{background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:40px;text-align:center;color:#fff}
+.hd h1{margin:0;font-size:26px} .bd{padding:36px} .bd p{color:#475569;line-height:1.8;font-size:15px}
+.cta{display:inline-block;margin:20px 0;padding:14px 32px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px}
+.ft{background:#f1f5f9;padding:20px 36px;font-size:12px;color:#94a3b8;text-align:center}
+</style></head><body>
+<div class="c">
+  <div class="hd"><h1>Hello, {{name}}! 👋</h1></div>
+  <div class="bd">
+    <p>Hi {{name}}, hope things are going great at <strong>{{company}}</strong>.</p>
+    <p>My name is [Your Name] and I'm reaching out because I believe we can genuinely help you. We specialize in [your service] and have helped businesses like yours achieve [benefit].</p>
+    <p>I'd love to connect for a quick 10-minute call — no pressure, just a conversation!</p>
+    <a href="https://yourwebsite.com" class="cta">Let's Connect →</a>
+    <p>Best,<br/><strong>VaradaTech Team</strong></p>
+  </div>
+  <div class="ft">© 2026 VaradaTech · Reply to this email anytime</div>
+</div></body></html>`,
+
+  followup: `<!DOCTYPE html><html><head><style>
+body{font-family:Arial,sans-serif;background:#f9fafb;margin:0}
+.c{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.hd{background:linear-gradient(135deg,#10b981,#0ea5e9);padding:40px;text-align:center;color:#fff}
+.hd h1{margin:0;font-size:24px} .bd{padding:36px} .bd p{color:#475569;line-height:1.8;font-size:15px}
+.cta{display:inline-block;margin:20px 0;padding:14px 32px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px}
+.ft{background:#f1f5f9;padding:20px 36px;font-size:12px;color:#94a3b8;text-align:center}
+</style></head><body>
+<div class="c">
+  <div class="hd"><h1>Quick Follow-up, {{name}} 🔔</h1></div>
+  <div class="bd">
+    <p>Hi {{name}}, just wanted to follow up on my previous email.</p>
+    <p>I know things get busy at <strong>{{company}}</strong>, so I'll keep this brief — did you get a chance to look at what I shared?</p>
+    <p>I truly believe this could make a real difference for you. Would love to hear your thoughts!</p>
+    <a href="https://yourwebsite.com" class="cta">Reply or Schedule a Call →</a>
+    <p>Cheers,<br/><strong>VaradaTech Team</strong></p>
+  </div>
+  <div class="ft">© 2026 VaradaTech · Reply anytime</div>
+</div></body></html>`,
+};
+
+function loadTemplate(which) {
+  document.getElementById(`${which}-body`).value = TEMPLATES[which];
+  showToast('success', 'Template Loaded', 'Edit it to match your message');
+}
+
+// ─── Recipients ──────────────────────────────────────────────
+async function loadLists() {
+  try {
+    const { lists } = await API.get('/api/contacts/lists/all');
+    const el = document.getElementById('lists-checkboxes');
+    if (!lists.length) {
+      el.innerHTML = '<div class="text-sm text-muted">No lists yet — upload a CSV from the Contacts page first.</div>';
+    } else {
+      el.innerHTML = lists.map(l => `
+        <label class="flex items-center gap-3 mb-3" style="cursor:pointer;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);transition:background .15s">
+          <input type="checkbox" class="list-check" value="${l.id}" onchange="updateRecipientCount()" style="width:16px;height:16px" />
+          <div><div style="font-weight:600">${l.name}</div><div class="text-xs text-muted">${l.contact_count} contacts</div></div>
+        </label>
+      `).join('');
+    }
+    updateRecipientCount();
+  } catch(e) {}
+}
+
+async function updateRecipientCount() {
+  const checked = [...document.querySelectorAll('.list-check:checked')].map(c => c.value);
+  const el = document.getElementById('total-recipients');
+  if (checked.length === 0) {
+    try {
+      const res = await API.get('/api/contacts/stats/summary');
+      el.textContent = `${res.active ?? '?'} active contacts will receive this campaign`;
+    } catch(e) { el.textContent = 'All active contacts'; }
+  } else {
+    el.textContent = `${checked.length} list(s) selected`;
+  }
+}
+
+// ─── Mode toggle ─────────────────────────────────────────────
+function updateModeUI() {
+  const mode = document.querySelector('input[name="send-mode"]:checked').value;
+  document.getElementById('schedule-opts').classList.toggle('hidden', mode !== 'once');
+}
+
+// ─── Save & Launch ───────────────────────────────────────────
+async function saveCampaign() {
+  const btn = document.getElementById('save-btn');
+
+  const name       = document.getElementById('c-name').value.trim();
+  const lSubject   = document.getElementById('launch-subject').value.trim();
+  const lBody      = document.getElementById('launch-body').value.trim();
+  const fuSubject  = document.getElementById('followup-subject').value.trim();
+  const fuBody     = document.getElementById('followup-body').value.trim();
+  const gap        = parseInt(document.getElementById('gap-days').value) || 1;
+  const count      = parseInt(document.getElementById('followup-count').value) || 0;
+
+  if (!name)      return showToast('warning', 'Required', 'Campaign name is required (Step 1)');
+  if (!lSubject)  return showToast('warning', 'Required', 'Launch email subject is required (Step 2)');
+  if (!lBody)     return showToast('warning', 'Required', 'Launch email body is required (Step 2)');
+  if (count > 0 && !fuSubject) return showToast('warning', 'Required', 'Follow-up subject is required (Step 3)');
+  if (count > 0 && !fuBody)    return showToast('warning', 'Required', 'Follow-up email body is required (Step 3)');
+
+  const mode    = document.querySelector('input[name="send-mode"]:checked').value;
+  const listIds = [...document.querySelectorAll('.list-check:checked')].map(c => parseInt(c.value));
+
+  // Build followups array — same subject/body, delay_days = gap, step 1..N
+  const followups = [];
+  for (let i = 1; i <= count; i++) {
+    followups.push({
+      step_number: i,
+      delay_days: gap,          // always the same gap
+      subject: fuSubject,
+      body_html: fuBody,
+      body_text: '',
+    });
+  }
+
+  const payload = {
+    name,
+    subject:   lSubject,
+    body_html: lBody,
+    body_text: '',
+    from_name:  document.getElementById('c-from-name').value || 'VaradaTech',
+    from_email: document.getElementById('c-from-email').value || 'info@varadatech.com',
+    reply_to:   document.getElementById('c-reply-to').value   || 'info@varadatech.com',
+    send_mode: 'sequence',
+    scheduled_at: mode === 'once' ? document.getElementById('c-scheduled-at').value : null,
+    list_ids: listIds,
+    contact_ids: [],
+    followups,
+  };
+
+  setButtonLoading(btn, true, 'Launching…');
+  try {
+    const res = await API.post('/api/campaigns', payload);
+    const campaignId = res.campaign.id;
+
+    if (mode === 'now') {
+      await API.post(`/api/campaigns/${campaignId}/send`);
+      showToast('success', '🚀 Campaign Launched!',
+        count > 0
+          ? `Launch email is sending now. ${count} follow-up${count>1?'s':''} will send every ${gap} day${gap>1?'s':''} automatically.`
+          : 'Launch email is sending now.');
+    } else {
+      showToast('success', '📅 Campaign Scheduled!', 'Will launch at your chosen time.');
+    }
+
+    closeModal();
+    loadCampaigns();
+  } catch(e) {
+    showToast('error', 'Error', e.message);
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+// ─── Modal open/close ─────────────────────────────────────────
+function openCreateModal() {
+  document.getElementById('modal-title').textContent = '✚ New Campaign';
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-from-name').value = 'VaradaTech';
+  document.getElementById('c-from-email').value = 'info@varadatech.com';
+  document.getElementById('c-reply-to').value = 'info@varadatech.com';
+  document.getElementById('launch-subject').value = '';
+  document.getElementById('launch-body').value = '';
+  document.getElementById('followup-subject').value = '';
+  document.getElementById('followup-body').value = '';
+  document.getElementById('gap-days').value = 1;
+  document.getElementById('followup-count').value = 3;
+  document.getElementById('mode-now').checked = true;
+  document.getElementById('schedule-opts')?.classList.add('hidden');
+  goStep(1);
+  Modal.open('campaign-modal');
+}
+function closeModal() { Modal.close('campaign-modal'); }
+
+// ─── Campaign table ───────────────────────────────────────────
+async function loadCampaigns() {
+  try {
+    const { campaigns } = await API.get('/api/campaigns');
+    const tbody  = document.getElementById('campaigns-tbody');
+    const empty  = document.getElementById('campaigns-empty');
+
+    if (!campaigns?.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    const rows = await Promise.all(campaigns.map(async c => {
+      let fups = 0;
+      try { const d = await API.get(`/api/campaigns/${c.id}`); fups = d.followups?.length || 0; } catch(e){}
+      return { ...c, fups };
+    }));
+
+    const statusLabel = {
+      draft: 'Draft', scheduled: 'Scheduled', running: 'Sending…',
+      sequence_active: '🔄 Sequence Running', completed: '✅ Completed', failed: '❌ Failed',
+    };
+
+    tbody.innerHTML = rows.map(c => `
+      <tr>
+        <td>
+          <div style="font-weight:700">${c.name}</div>
+          <div class="text-xs text-muted">${c.subject}</div>
+        </td>
+        <td>
+          <div style="font-weight:700;color:var(--accent-light)">1 + ${c.fups} follow-up${c.fups!==1?'s':''}</div>
+          <div class="text-xs text-muted">${c.fups > 0 ? 'Auto sequence' : 'Single send'}</div>
+        </td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${c.sent_count}</td>
+        <td>${c.open_count} <span class="text-muted text-xs">(${pct(c.open_count, c.sent_count)})</span></td>
+        <td>${c.click_count} <span class="text-muted text-xs">(${pct(c.click_count, c.sent_count)})</span></td>
+        <td class="text-xs text-muted">${c.created_at ? formatDate(c.created_at) : '—'}</td>
+        <td>
+          <div class="flex gap-2">
+            ${c.status === 'draft' ? `<button class="btn btn-success btn-sm" onclick="launchNow(${c.id})">⚡ Launch</button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="viewLogs(${c.id},'${esc(c.name)}')">📋 Logs</button>
+            <button class="btn btn-danger btn-sm" onclick="delCampaign(${c.id})">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { showToast('error','Error', e.message); }
+}
+
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+
+async function launchNow(id) {
+  if (!confirm('Launch this campaign now? The first email sends immediately and follow-ups run automatically.')) return;
+  try {
+    await API.post(`/api/campaigns/${id}/send`);
+    showToast('success','🚀 Launched!','Follow-ups will send automatically on schedule.');
+    loadCampaigns();
+  } catch(e) { showToast('error','Error', e.message); }
+}
+
+async function delCampaign(id) {
+  if (!confirm('Delete this campaign permanently?')) return;
+  try { await API.delete(`/api/campaigns/${id}`); loadCampaigns(); showToast('success','Deleted',''); }
+  catch(e) { showToast('error','Error', e.message); }
+}
+
+async function viewLogs(id, name) {
+  document.getElementById('logs-modal-title').textContent = `📋 Logs — ${name}`;
+  Modal.open('logs-modal');
+  const el = document.getElementById('logs-content');
+  el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted)">Loading…</div>';
+  try {
+    const { logs } = await API.get(`/api/campaigns/${id}/logs`);
+    if (!logs.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><h3>No logs yet</h3><p>Logs appear once emails start sending</p></div>';
+      return;
+    }
+    el.innerHTML = `<div class="table-wrapper"><table>
+      <thead><tr><th>Email</th><th>Email Type</th><th>Status</th><th>Sent At</th><th>Opened</th></tr></thead>
+      <tbody>${logs.map(l => `<tr>
+        <td style="font-size:13px">${l.email}</td>
+        <td><span class="badge ${l.followup_step===0?'badge-scheduled':'badge-running'}">
+          ${l.followup_step===0 ? '📧 Launch Email' : `🔄 Follow-up #${l.followup_step}`}
+        </span></td>
+        <td>${statusBadge(l.status)}</td>
+        <td class="text-xs text-muted">${l.sent_at ? formatDate(l.sent_at) : '—'}</td>
+        <td>${l.opened_at ? '✅ ' + timeAgo(l.opened_at) : '<span class="text-muted">Not yet</span>'}</td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  } catch(e) { el.innerHTML = '<div class="text-muted p-4">Error loading logs.</div>'; }
+}
+
+document.addEventListener('DOMContentLoaded', loadCampaigns);
+</script>
+</body>
+</html>
