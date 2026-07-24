@@ -4,11 +4,12 @@ const { queries, run, get, all } = require('./db');
 
 let transporter = null;
 
+// ─── SMTP Config (fallback when no Brevo API key) ────────────────────────────
 function getSmtpConfig() {
   return {
-    host: process.env.SMTP_HOST || 'smtpout.secureserver.net',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: (process.env.SMTP_SECURE || 'false') === 'true', // false = STARTTLS (works on Railway)
+    host:   process.env.SMTP_HOST || 'smtpout.secureserver.net',
+    port:   parseInt(process.env.SMTP_PORT || '587'),
+    secure: (process.env.SMTP_SECURE || 'false') === 'true',
     auth: {
       user: process.env.SMTP_USER || '',
       pass: process.env.SMTP_PASS || '',
@@ -22,25 +23,10 @@ function getSmtpConfig() {
   };
 }
 
-async function createTransporterFromDB() {
-  // Load all SMTP settings from DB into env vars (called on startup)
-  try {
-    const keys = ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure','from_name','from_email'];
-    for (const key of keys) {
-      const row = await get(`SELECT value FROM settings WHERE key='${key}'`);
-      if (row?.value) {
-        const envKey = key.toUpperCase();
-        process.env[envKey] = row.value;
-      }
-    }
-  } catch(e) { /* DB not ready yet, use env vars */ }
-  return createTransporter();
-}
-
 function createTransporter() {
   const config = getSmtpConfig();
   if (!config.auth.user || !config.auth.pass) {
-    console.warn('⚠️  SMTP credentials not configured. Please set up in Settings.');
+    console.warn('⚠️  SMTP credentials not configured.');
     transporter = null;
     return null;
   }
@@ -48,52 +34,115 @@ function createTransporter() {
   return transporter;
 }
 
+async function createTransporterFromDB() {
+  try {
+    const keys = ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure',
+                  'from_name','from_email','brevo_api_key'];
+    for (const key of keys) {
+      const row = await get(`SELECT value FROM settings WHERE key='${key}'`);
+      if (row?.value) process.env[key.toUpperCase()] = row.value;
+    }
+  } catch(e) { /* DB not ready yet */ }
+  return createTransporter();
+}
 
+// ─── Brevo HTTP API (bypasses all SMTP port blocking on Railway) ──────────────
+async function sendViaBrevoAPI({ to, toName, subject, html, text, fromName, fromEmail, replyTo }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) throw new Error('Brevo API key not configured');
+
+  const body = {
+    sender: {
+      name:  fromName  || process.env.FROM_NAME  || 'VaradaTech',
+      email: fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER,
+    },
+    to: [{ email: to, name: toName || to }],
+    subject,
+    htmlContent: html,
+    textContent: text,
+  };
+  if (replyTo) body.replyTo = { email: replyTo };
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+    body:    JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(`Brevo API error: ${err.message || res.statusText}`);
+  }
+  return await res.json();
+}
+
+async function verifyBrevoAPIKey(apiKey) {
+  const key = apiKey || process.env.BREVO_API_KEY;
+  if (!key) return { success: false, message: 'Brevo API key not set' };
+
+  const res = await fetch('https://api.brevo.com/v3/account', {
+    headers: { 'api-key': key },
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    return { success: true, message: `✅ Brevo API connected! Account: ${data.email || data.companyName || 'Verified'}` };
+  }
+  const err = await res.json().catch(() => ({ message: 'Invalid API key' }));
+  return { success: false, message: `Brevo API error: ${err.message}` };
+}
+
+// ─── Unified verifyConnection (tries Brevo API first, then SMTP) ──────────────
 async function verifyConnection() {
   try {
-    // Load SMTP settings from DB (persists across Railway restarts)
+    // Try Brevo API key first (always works on Railway)
+    const brevoKeyRow = await get("SELECT value FROM settings WHERE key='brevo_api_key'").catch(() => null);
+    const brevoKey = brevoKeyRow?.value || process.env.BREVO_API_KEY;
+
+    if (brevoKey) {
+      process.env.BREVO_API_KEY = brevoKey;
+      return await verifyBrevoAPIKey(brevoKey);
+    }
+
+    // Fall back to SMTP with 25s timeout
     const rows = await Promise.all([
       get("SELECT value FROM settings WHERE key='smtp_host'"),
       get("SELECT value FROM settings WHERE key='smtp_pass'"),
+      get("SELECT value FROM settings WHERE key='smtp_user'"),
+      get("SELECT value FROM settings WHERE key='smtp_port'"),
+      get("SELECT value FROM settings WHERE key='smtp_secure'"),
     ]);
-    if (rows[0]?.value) process.env.SMTP_HOST = rows[0].value;
-    if (rows[1]?.value) process.env.SMTP_PASS = rows[1].value;
+    if (rows[0]?.value) process.env.SMTP_HOST   = rows[0].value;
+    if (rows[1]?.value) process.env.SMTP_PASS   = rows[1].value;
+    if (rows[2]?.value) process.env.SMTP_USER   = rows[2].value;
+    if (rows[3]?.value) process.env.SMTP_PORT   = rows[3].value;
+    if (rows[4]?.value) process.env.SMTP_SECURE = rows[4].value;
 
     const t = createTransporter();
-    if (!t) return { success: false, message: 'SMTP credentials not configured. Please save Settings first.' };
+    if (!t) return { success: false, message: 'No credentials configured. Add a Brevo API key or SMTP password in Settings.' };
 
-    // Add a 25-second timeout so it never hangs
     await Promise.race([
       t.verify(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out after 25s. Try port 587 with STARTTLS if on a cloud server.')), 25000)
-      )
+      new Promise((_, rej) => setTimeout(() =>
+        rej(new Error('SMTP timed out after 25s — Railway blocks SMTP ports. Use a Brevo API key instead (see Settings).')), 25000))
     ]);
     await queries.setSetting('smtp_configured', 'true');
-    return { success: true, message: 'SMTP connection verified ✅ Emails will be sent successfully.' };
+    return { success: true, message: '✅ SMTP connection verified! Emails will send successfully.' };
   } catch (err) {
     await queries.setSetting('smtp_configured', 'false').catch(() => {});
     return { success: false, message: err.message };
   }
 }
 
+// ─── Template helpers ─────────────────────────────────────────────────────────
 function compileTemplate(htmlTemplate, data) {
-  try {
-    return handlebars.compile(htmlTemplate || '')(data);
-  } catch (e) { return htmlTemplate || ''; }
-}
-
-function addViewInBrowserLink(html, trackingId, appUrl) {
-  // This link goes through click tracker → counts as opened when clicked in Gmail
-  const viewUrl = `${appUrl}/track/click/${trackingId}?url=${encodeURIComponent(appUrl + '/view/' + trackingId)}`;
-  const banner = `<div style="text-align:center;padding:8px;background:#f8faff;font-family:Arial,sans-serif;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0;">Having trouble viewing this email? <a href="${viewUrl}" style="color:#2563eb;">View in browser</a></div>`;
-  return html.includes('<body') ? html.replace(/<body([^>]*)>/i, `<body$1>${banner}`) : banner + html;
+  try { return handlebars.compile(htmlTemplate || '')(data); }
+  catch (e) { return htmlTemplate || ''; }
 }
 
 function addUnsubscribeLink(html, trackingId, appUrl) {
-  // Route unsubscribe through click tracker first so Gmail opens are detected
-  const unsubUrl    = `${appUrl}/unsubscribe/${trackingId}`;
-  const trackedUrl  = `${appUrl}/track/click/${trackingId}?url=${encodeURIComponent(unsubUrl)}`;
+  const unsubUrl   = `${appUrl}/unsubscribe/${trackingId}`;
+  const trackedUrl = `${appUrl}/track/click/${trackingId}?url=${encodeURIComponent(unsubUrl)}`;
   return html + `<div style="margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;color:#9ca3af;"><p>You're receiving this email because you opted in.</p><p><a href="${trackedUrl}" style="color:#6b7280;">Unsubscribe</a></p></div>`;
 }
 
@@ -109,18 +158,15 @@ function addClickTracking(html, trackingId, appUrl) {
   });
 }
 
+// ─── Send a single email (Brevo API → SMTP fallback) ─────────────────────────
 async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fromEmail, replyTo, trackingId, appUrl }) {
-  if (!transporter) createTransporter();
-  if (!transporter) throw new Error('SMTP not configured. Please go to Settings.');
-
-  // Read app_url from DB settings (so Gmail recipients can click tracking links)
   let dbAppUrl = null;
   try {
-    const setting = await get("SELECT value FROM settings WHERE key='app_url'");
-    dbAppUrl = setting?.value || null;
+    const s = await get("SELECT value FROM settings WHERE key='app_url'");
+    dbAppUrl = s?.value || null;
   } catch(e) {}
-  const resolvedAppUrl = dbAppUrl || appUrl || process.env.APP_URL || 'http://localhost:3000';
-  const resolvedFromName = fromName || process.env.FROM_NAME || 'Email Marketing';
+  const resolvedAppUrl   = dbAppUrl || appUrl || process.env.APP_URL || 'http://localhost:3000';
+  const resolvedFromName  = fromName  || process.env.FROM_NAME  || 'Email Marketing';
   const resolvedFromEmail = fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
   let finalHtml = htmlBody || '';
@@ -130,23 +176,41 @@ async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fr
     finalHtml = addUnsubscribeLink(finalHtml, trackingId, resolvedAppUrl);
   }
 
+  // Use Brevo HTTP API if key is available (bypasses Railway's SMTP block)
+  const brevoKey = process.env.BREVO_API_KEY;
+  if (brevoKey) {
+    return sendViaBrevoAPI({
+      to, toName, subject,
+      html: finalHtml,
+      text: textBody || finalHtml.replace(/<[^>]*>/g, ''),
+      fromName: resolvedFromName,
+      fromEmail: resolvedFromEmail,
+      replyTo,
+    });
+  }
+
+  // SMTP fallback
+  if (!transporter) createTransporter();
+  if (!transporter) throw new Error('Email not configured. Add a Brevo API key or SMTP credentials in Settings.');
+
   return transporter.sendMail({
-    from: `"${resolvedFromName}" <${resolvedFromEmail}>`,
-    to: toName ? `"${toName}" <${to}>` : to,
+    from:    `"${resolvedFromName}" <${resolvedFromEmail}>`,
+    to:      toName ? `"${toName}" <${to}>` : to,
     replyTo: replyTo || resolvedFromEmail,
     subject,
-    html: finalHtml,
-    text: textBody || finalHtml.replace(/<[^>]*>/g, ''),
+    html:    finalHtml,
+    text:    textBody || finalHtml.replace(/<[^>]*>/g, ''),
   });
 }
 
+// ─── Bulk campaign sender ─────────────────────────────────────────────────────
 async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followupSequenceId = null }) {
   const { v4: uuidv4 } = require('uuid');
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
 
-  const batchSizeRow = await queries.getSetting('batch_size');
+  const batchSizeRow  = await queries.getSetting('batch_size');
   const batchDelayRow = await queries.getSetting('batch_delay_ms');
-  const batchSize = parseInt(batchSizeRow?.value || '50');
+  const batchSize  = parseInt(batchSizeRow?.value  || '50');
   const batchDelay = parseInt(batchDelayRow?.value || '1000');
 
   let sentCount = 0, failedCount = 0;
@@ -159,16 +223,16 @@ async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followup
     try { customFields = JSON.parse(contact.custom_fields || '{}'); } catch(e) {}
 
     const templateData = {
-      name: contact.name || contact.email.split('@')[0],
-      email: contact.email,
+      name:    contact.name || contact.email.split('@')[0],
+      email:   contact.email,
       company: contact.company || '',
-      phone: contact.phone || '',
+      phone:   contact.phone   || '',
       ...customFields,
     };
 
-    const personalizedHtml = compileTemplate(campaign.body_html, templateData);
-    const personalizedText = compileTemplate(campaign.body_text, templateData);
-    const personalizedSubject = compileTemplate(campaign.subject, templateData);
+    const personalizedHtml    = compileTemplate(campaign.body_html, templateData);
+    const personalizedText    = compileTemplate(campaign.body_text, templateData);
+    const personalizedSubject = compileTemplate(campaign.subject,   templateData);
 
     await queries.insertLog({
       campaign_id: campaign.id, contact_id: contact.id || null,
@@ -207,4 +271,8 @@ async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followup
   return { sentCount, failedCount };
 }
 
-module.exports = { createTransporter, createTransporterFromDB, verifyConnection, sendEmail, sendBulkCampaign, compileTemplate, getSmtpConfig };
+module.exports = {
+  createTransporter, createTransporterFromDB,
+  verifyConnection, verifyBrevoAPIKey,
+  sendEmail, sendBulkCampaign, compileTemplate, getSmtpConfig,
+};

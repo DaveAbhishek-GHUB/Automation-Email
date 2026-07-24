@@ -157,6 +157,31 @@ app.post('/api/settings/app-url', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/settings/brevo — save Brevo API key
+app.post('/api/settings/brevo', async (req, res) => {
+  try {
+    const { apiKey, fromEmail } = req.body;
+    if (!apiKey) return res.status(400).json({ error: 'apiKey required' });
+    await queries.setSetting('brevo_api_key', apiKey.trim());
+    if (fromEmail) {
+      await queries.setSetting('from_email', fromEmail.trim());
+      process.env.FROM_EMAIL = fromEmail.trim();
+    }
+    process.env.BREVO_API_KEY = apiKey.trim();
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/settings/test-brevo — verify Brevo API key via HTTPS (works on Railway)
+app.post('/api/settings/test-brevo', async (req, res) => {
+  try {
+    const { verifyBrevoAPIKey } = require('./mailer');
+    const result = await verifyBrevoAPIKey();
+    res.json({ success: result.success, message: result.message });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+
 // ─── Frontend Routes ──────────────────────────────────────────────────────────
 const pages = ['contacts', 'campaigns', 'followups', 'analytics', 'settings'];
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
