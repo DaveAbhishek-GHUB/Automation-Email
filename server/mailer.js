@@ -6,9 +6,9 @@ let transporter = null;
 
 function getSmtpConfig() {
   return {
-    host: process.env.SMTP_HOST || 'smtp.titan.email',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: (process.env.SMTP_SECURE || 'true') === 'true',
+    host: process.env.SMTP_HOST || 'smtpout.secureserver.net',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: (process.env.SMTP_SECURE || 'false') === 'true', // false = STARTTLS (works on Railway)
     auth: {
       user: process.env.SMTP_USER || '',
       pass: process.env.SMTP_PASS || '',

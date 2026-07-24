@@ -81,8 +81,8 @@
           <div class="form-group">
             <label>SSL / TLS</label>
             <select class="select" id="smtp-secure">
-              <option value="true">SSL (Port 465) — Recommended</option>
-              <option value="false">TLS (Port 587)</option>
+              <option value="false">TLS (Port 587) — Recommended for Cloud/Railway</option>
+              <option value="true">SSL (Port 465) — Local only</option>
             </select>
           </div>
           <div class="form-group"><label>From Name</label><input type="text" class="input" id="from-name" placeholder="VaradaTech" /></div>
@@ -206,10 +206,10 @@ async function loadSettings() {
     const res = await API.get('/api/analytics/settings');
     const s = res.settings || {};
     document.getElementById('smtp-host').value  = s.smtp_host  || 'smtpout.secureserver.net';
-    document.getElementById('smtp-port').value  = s.smtp_port  || '465';
+    document.getElementById('smtp-port').value  = s.smtp_port  || '587';
     document.getElementById('smtp-user').value  = s.smtp_user  || 'info@varadatech.com';
     document.getElementById('smtp-pass').value  = s.smtp_pass  || '';
-    document.getElementById('smtp-secure').value= s.smtp_secure=== 'false' ? 'false' : 'true';
+    document.getElementById('smtp-secure').value= (s.smtp_secure === 'true') ? 'true' : 'false';
     document.getElementById('from-name').value  = s.from_name  || 'VaradaTech';
     document.getElementById('batch-size').value = s.batch_size || '50';
     document.getElementById('batch-delay').value= s.batch_delay_ms || '1000';
