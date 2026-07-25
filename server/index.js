@@ -192,6 +192,44 @@ app.get('/api/settings/status', async (req, res) => {
   res.json({ hasBrevo, hasSmtp, method: hasBrevo ? 'brevo-api' : (hasSmtp ? 'smtp' : 'none') });
 });
 
+// POST /api/settings/send-test — send a real test email and return exact error if any
+app.post('/api/settings/send-test', async (req, res) => {
+  try {
+    const { to, from_email, from_name } = req.body;
+    if (!to) return res.status(400).json({ success: false, message: 'to email required' });
+
+    const { sendEmail } = require('./mailer');
+    await sendEmail({
+      to,
+      toName: 'Test Recipient',
+      subject: 'TitanMail Test Email ✅',
+      htmlBody: `<div style="font-family:Arial,sans-serif;padding:32px;background:#f8fafc">
+        <h2 style="color:#10b981">✅ TitanMail is Working!</h2>
+        <p>This test email was sent at <strong>${new Date().toISOString()}</strong> via Brevo API.</p>
+        <p>Your email marketing tool is fully operational 🚀</p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
+        <p style="color:#9ca3af;font-size:12px">Sent from TitanMail — automation-email-production.up.railway.app</p>
+      </div>`,
+      fromName:  from_name  || process.env.FROM_NAME  || 'VaradaTech',
+      fromEmail: from_email || process.env.FROM_EMAIL || 'info@varadatech.com',
+    });
+    res.json({ success: true, message: `✅ Test email sent successfully to ${to}! Check your inbox.` });
+  } catch (e) {
+    res.json({ success: false, message: `❌ Failed: ${e.message}` });
+  }
+});
+
+// GET /api/settings/failed-logs — show last 10 failed email attempts with error messages
+app.get('/api/settings/failed-logs', async (req, res) => {
+  try {
+    const logs = await all(
+      `SELECT email, subject, error_message, sent_at FROM email_logs
+       WHERE status='failed' ORDER BY id DESC LIMIT 10`
+    );
+    res.json({ logs });
+  } catch (e) { res.json({ logs: [] }); }
+});
+
 // ─── Frontend Routes ──────────────────────────────────────────────────────────
 const pages = ['contacts', 'campaigns', 'followups', 'analytics', 'settings'];
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));

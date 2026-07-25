@@ -122,6 +122,27 @@
         <div id="smtp-result" class="mt-3"></div>
       </div>
 
+      <!-- ★ Send Test Email — shows exact error if Brevo fails -->
+      <div class="card mb-5" style="border-color:#10b981;border-width:2px">
+        <div class="section-title mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          Send Test Email <span style="font-size:11px;color:#10b981;font-weight:600;margin-left:6px">★ Use this to verify sending works</span>
+        </div>
+        <div class="form-group mb-3">
+          <label>Send test email to</label>
+          <input type="email" class="input" id="test-email-to" placeholder="your@email.com" value="abhishekjdave0309@gmail.com" />
+        </div>
+        <button class="btn btn-primary" id="send-test-btn" onclick="sendTestEmail()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Test Email Now
+        </button>
+        <div id="test-email-result" class="mt-3"></div>
+        <div id="failed-logs-section" class="mt-3" style="display:none">
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--red)">❌ Recent Failed Emails (with error reasons):</div>
+          <div id="failed-logs-list"></div>
+        </div>
+      </div>
+
       <!-- Sending Settings -->
       <div class="card mb-5">
         <div class="section-title mb-4">
@@ -354,6 +375,43 @@ async function testSMTP() {
     }
   } catch(e) {
     result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${e.message}</span></div>`;
+  } finally { setButtonLoading(btn, false); }
+}
+
+async function sendTestEmail() {
+  const btn    = document.getElementById('send-test-btn');
+  const result = document.getElementById('test-email-result');
+  const to     = document.getElementById('test-email-to').value.trim();
+  if (!to) { result.innerHTML = '<div class="alert alert-warning">Enter an email address first.</div>'; return; }
+
+  setButtonLoading(btn, true, 'Sending…');
+  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Sending test email via Brevo…</div>';
+
+  try {
+    const res = await API.post('/api/settings/send-test', { to });
+    if (res.success) {
+      result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
+    } else {
+      result.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${res.message}</div>`;
+      // Also show failed logs
+      try {
+        const logs = await API.get('/api/settings/failed-logs');
+        if (logs.logs?.length) {
+          const logsSection = document.getElementById('failed-logs-section');
+          const logsList    = document.getElementById('failed-logs-list');
+          logsSection.style.display = 'block';
+          logsList.innerHTML = logs.logs.map(l =>
+            `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;font-size:12px">
+              <div><strong>${l.email}</strong> — ${l.subject || 'no subject'}</div>
+              <div style="color:var(--red);margin-top:4px">⚠️ ${l.error_message || 'Unknown error'}</div>
+              <div style="color:var(--text-muted);font-size:11px">${l.sent_at || ''}</div>
+            </div>`
+          ).join('');
+        }
+      } catch(e) {}
+    }
+  } catch(e) {
+    result.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${e.message}</div>`;
   } finally { setButtonLoading(btn, false); }
 }
 
