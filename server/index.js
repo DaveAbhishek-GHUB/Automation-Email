@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { initializeDatabase, queries, run, get, all } = require('./db');
 const { initializeScheduler } = require('./scheduler');
-const { createTransporter, createTransporterFromDB, verifyConnection, verifyBrevoAPIKey } = require('./mailer');
+const { createTransporter, createTransporterFromDB, verifyConnection } = require('./mailer');
 
 
 const app = express();
@@ -162,39 +162,10 @@ app.post('/api/settings/app-url', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/settings/brevo — save Brevo API key
-app.post('/api/settings/brevo', async (req, res) => {
-  try {
-    const { apiKey, fromEmail } = req.body;
-    if (!apiKey) return res.status(400).json({ error: 'apiKey required' });
-    await queries.setSetting('brevo_api_key', apiKey.trim());
-    if (fromEmail) {
-      await queries.setSetting('from_email', fromEmail.trim());
-      process.env.FROM_EMAIL = fromEmail.trim();
-    }
-    process.env.BREVO_API_KEY = apiKey.trim();
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/settings/test-brevo — verify Brevo API key via HTTPS (works on Railway)
-app.post('/api/settings/test-brevo', async (req, res) => {
-  try {
-    // Load key from DB if not in env yet
-    if (!process.env.BREVO_API_KEY) {
-      const row = await get("SELECT value FROM settings WHERE key='brevo_api_key'").catch(() => null);
-      if (row?.value) process.env.BREVO_API_KEY = row.value;
-    }
-    const result = await verifyBrevoAPIKey();
-    res.json({ success: result.success, message: result.message });
-  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
-});
-
 // GET /api/settings/status — quick check of what's configured
 app.get('/api/settings/status', async (req, res) => {
-  const hasBrevo = !!process.env.BREVO_API_KEY;
-  const hasSmtp  = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
-  res.json({ hasBrevo, hasSmtp, method: hasBrevo ? 'brevo-api' : (hasSmtp ? 'smtp' : 'none') });
+  const hasSmtp = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+  res.json({ hasSmtp, method: hasSmtp ? 'smtp' : 'none' });
 });
 
 // POST /api/settings/send-test — send a real test email and return exact error if any
@@ -210,15 +181,15 @@ app.post('/api/settings/send-test', async (req, res) => {
       subject: 'TitanMail Test Email ✅',
       htmlBody: `<div style="font-family:Arial,sans-serif;padding:32px;background:#f8fafc">
         <h2 style="color:#10b981">✅ TitanMail is Working!</h2>
-        <p>This test email was sent at <strong>${new Date().toISOString()}</strong> via Brevo API.</p>
-        <p>Your email marketing tool is fully operational 🚀</p>
+        <p>This test email was sent at <strong>${new Date().toISOString()}</strong> via Titan SMTP.</p>
+        <p>Your email marketing tool is fully operational on Render 🚀</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
-        <p style="color:#9ca3af;font-size:12px">Sent from TitanMail — automation-email-production.up.railway.app</p>
+        <p style="color:#9ca3af;font-size:12px">Sent from TitanMail — automation-email-u0b2.onrender.com</p>
       </div>`,
       fromName:  from_name  || process.env.FROM_NAME  || 'VaradaTech',
       fromEmail: from_email || process.env.FROM_EMAIL || 'info@varadatech.com',
     });
-    res.json({ success: true, message: `✅ Test email sent successfully to ${to}! Check your inbox.` });
+    res.json({ success: true, message: `✅ Test email sent to ${to} via Titan SMTP! Check your inbox.` });
   } catch (e) {
     res.json({ success: false, message: `❌ Failed: ${e.message}` });
   }
@@ -256,17 +227,15 @@ async function start() {
   await createTransporterFromDB(); // loads SMTP from DB/env → survives restarts
 
   // ── Auto-seed settings from env vars (runs every startup) ──────────────────
-  // Only seeds if env var is explicitly set — never overwrites with empty values
   const autoSeed = [
-    ['app_url',       process.env.APP_URL      ],
-    ['brevo_api_key', process.env.BREVO_API_KEY],
-    ['from_email',    process.env.FROM_EMAIL   ],
-    ['from_name',     process.env.FROM_NAME    ],
-    ['smtp_host',     process.env.SMTP_HOST    ],
-    ['smtp_port',     process.env.SMTP_PORT    ],
-    ['smtp_user',     process.env.SMTP_USER    ],
-    ['smtp_pass',     process.env.SMTP_PASS    ],
-    ['smtp_secure',   process.env.SMTP_SECURE  ],
+    ['app_url',     process.env.APP_URL     || 'https://automation-email-u0b2.onrender.com'],
+    ['from_email',  process.env.FROM_EMAIL  || 'info@varadatech.com'],
+    ['from_name',   process.env.FROM_NAME   || 'VaradaTech'],
+    ['smtp_host',   process.env.SMTP_HOST   ],
+    ['smtp_port',   process.env.SMTP_PORT   ],
+    ['smtp_user',   process.env.SMTP_USER   ],
+    ['smtp_pass',   process.env.SMTP_PASS   ],
+    ['smtp_secure', process.env.SMTP_SECURE ],
   ];
   for (const [key, val] of autoSeed) {
     if (val) await queries.setSetting(key, val);
