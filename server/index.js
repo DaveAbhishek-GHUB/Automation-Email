@@ -253,20 +253,31 @@ async function start() {
     }
   }
 
-  await createTransporterFromDB(); // loads SMTP from DB → survives Railway restarts
+  await createTransporterFromDB(); // loads SMTP from DB/env → survives restarts
 
   // ── Auto-seed settings from env vars (runs every startup) ──────────────────
-  // This ensures Railway env vars always override stale DB values like localhost
+  // Only seeds if env var is explicitly set — never overwrites with empty values
   const autoSeed = [
-    ['app_url',       process.env.APP_URL       || 'https://automation-email-production.up.railway.app'],
-    ['brevo_api_key', process.env.BREVO_API_KEY || ''],
-    ['from_email',    process.env.FROM_EMAIL     || 'info@varadatech.com'],
-    ['from_name',     process.env.FROM_NAME      || 'VaradaTech'],
+    ['app_url',       process.env.APP_URL      ],
+    ['brevo_api_key', process.env.BREVO_API_KEY],
+    ['from_email',    process.env.FROM_EMAIL   ],
+    ['from_name',     process.env.FROM_NAME    ],
+    ['smtp_host',     process.env.SMTP_HOST    ],
+    ['smtp_port',     process.env.SMTP_PORT    ],
+    ['smtp_user',     process.env.SMTP_USER    ],
+    ['smtp_pass',     process.env.SMTP_PASS    ],
+    ['smtp_secure',   process.env.SMTP_SECURE  ],
   ];
   for (const [key, val] of autoSeed) {
     if (val) await queries.setSetting(key, val);
   }
-  console.log(`🌐 App URL set to: ${process.env.APP_URL || 'https://automation-email-production.up.railway.app'}`);
+
+  // Mark SMTP as configured if credentials are present
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    await queries.setSetting('smtp_configured', 'true');
+    console.log(`📧 SMTP configured: ${process.env.SMTP_HOST || 'smtp.titan.email'}`);
+  }
+  if (process.env.APP_URL) console.log(`🌐 App URL: ${process.env.APP_URL}`);
 
   app.listen(PORT, () => {
     console.log(`

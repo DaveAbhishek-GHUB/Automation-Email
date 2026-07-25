@@ -36,16 +36,16 @@
 
     <div class="page-content" style="max-width:720px">
 
-      <!-- Public App URL - auto-set to Railway URL -->
+      <!-- Public App URL -->
       <div class="card mb-5">
         <div class="section-title mb-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          Public App URL <span style="font-size:11px;color:var(--green);font-weight:600;margin-left:6px">✅ Auto-set to Railway URL</span>
+          Public App URL
         </div>
         <div class="form-group mb-3">
-          <label>Public URL <span style="font-size:11px;color:var(--text-muted)">(used for email open/click tracking)</span></label>
-          <input type="text" class="input" id="app-url" value="https://automation-email-production.up.railway.app" />
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">This is pre-set to your Railway URL. All tracking links in emails will use this.</div>
+          <label>Your App URL <span style="font-size:11px;color:var(--text-muted)">(used for email open/click tracking — no trailing slash)</span></label>
+          <input type="text" class="input" id="app-url" placeholder="https://your-app.onrender.com" />
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Paste your Render URL here. All tracking links in emails will use this address.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveAppUrl()">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -53,47 +53,19 @@
         </button>
       </div>
 
-      <!-- ★ Brevo API Key (Recommended for Railway / Cloud) -->
-      <div class="card mb-5" style="border-color:var(--blue);border-width:2px">
-        <div class="section-title mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-          Brevo API Key <span style="font-size:11px;color:var(--blue);font-weight:600;margin-left:6px">★ RECOMMENDED for Railway</span>
-        </div>
-        <div class="alert alert-success mb-3" style="margin-top:8px">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <div><strong>Bypasses Railway's SMTP block.</strong> Uses HTTPS (port 443) — always works. Free plan: 300 emails/day. Get your key at <a href="https://brevo.com" target="_blank" style="color:var(--blue)">app.brevo.com</a> → Settings → API Keys.</div>
-        </div>
-        <div class="form-group mb-3">
-          <label>Brevo API Key <span style="font-size:11px;color:var(--text-muted)">(starts with xkeysib-...)</span></label>
-          <input type="password" class="input" id="brevo-api-key" placeholder="xkeysib-xxxxxxxxxxxxxxxx-xxxxxxxx" />
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">In Brevo: Profile → SMTP &amp; API → API Keys tab → Create a new API key</div>
-        </div>
-        <div class="form-group mb-3">
-          <label>From Email <span style="font-size:11px;color:var(--text-muted)">(your verified sender email)</span></label>
-          <input type="email" class="input" id="from-email" placeholder="info@varadatech.com" />
-        </div>
-        <div class="flex gap-2 mt-2">
-          <button class="btn btn-ghost" id="test-brevo-btn" onclick="testBrevoAPI()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Test API Key
-          </button>
-          <button class="btn btn-primary" id="save-brevo-btn" onclick="saveBrevoKey()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Save API Key
-          </button>
-        </div>
-        <div id="brevo-result" class="mt-3"></div>
-      </div>
-
-      <!-- SMTP Config (fallback - hidden when Brevo is active) -->
-      <div class="card mb-5" id="smtp-card" style="display:none">
+      <!-- ★ SMTP / Email Server (PRIMARY — Titan, GoDaddy, or any SMTP) -->
+      <div class="card mb-5" id="smtp-card" style="border-color:var(--blue);border-width:2px">
         <div class="section-title mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-          SMTP / Email Server <span style="font-size:11px;color:var(--text-muted);margin-left:6px">(fallback — not needed when Brevo API is active)</span>
+          SMTP / Email Server <span style="font-size:11px;color:var(--blue);font-weight:600;margin-left:6px">★ PRIMARY — Titan Mail SMTP</span>
+        </div>
+        <div class="alert alert-success mb-3" style="margin-top:0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <div>Use your <strong>Titan / GoDaddy SMTP credentials</strong> to send emails directly from <strong>info@varadatech.com</strong>. Works on Render and local — no third-party API needed.</div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>SMTP Host</label><input type="text" class="input" id="smtp-host" placeholder="smtpout.secureserver.net" /></div>
-          <div class="form-group"><label>Port</label><input type="number" class="input" id="smtp-port" placeholder="465" /></div>
+          <div class="form-group"><label>SMTP Host</label><input type="text" class="input" id="smtp-host" placeholder="smtp.titan.email" /></div>
+          <div class="form-group"><label>Port</label><input type="number" class="input" id="smtp-port" placeholder="587" /></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>Email (Username)</label><input type="email" class="input" id="smtp-user" placeholder="info@varadatech.com" /></div>
@@ -101,10 +73,10 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>SSL / TLS</label>
+            <label>Connection Type</label>
             <select class="select" id="smtp-secure">
-              <option value="false">TLS (Port 587) — Recommended for Cloud/Railway</option>
-              <option value="true">SSL (Port 465) — Local only</option>
+              <option value="false">STARTTLS — Port 587 (Recommended for Titan)</option>
+              <option value="true">SSL — Port 465</option>
             </select>
           </div>
           <div class="form-group"><label>From Name</label><input type="text" class="input" id="from-name" placeholder="VaradaTech" /></div>
@@ -120,6 +92,34 @@
           </button>
         </div>
         <div id="smtp-result" class="mt-3"></div>
+      </div>
+
+      <!-- Brevo API Key (Optional — only needed for Railway hosting) -->
+      <div class="card mb-5">
+        <div class="section-title mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          Brevo API Key <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-left:6px">(Optional — only for Railway hosting)</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Leave blank if using Titan SMTP above. Only needed if you host on Railway (which blocks SMTP ports).</div>
+        <div class="form-group mb-3">
+          <label>Brevo API Key <span style="font-size:11px;color:var(--text-muted)">(starts with xkeysib-...)</span></label>
+          <input type="password" class="input" id="brevo-api-key" placeholder="xkeysib-xxxxxxxxxxxxxxxx-xxxxxxxx" />
+        </div>
+        <div class="form-group mb-3">
+          <label>From Email <span style="font-size:11px;color:var(--text-muted)">(your verified sender email)</span></label>
+          <input type="email" class="input" id="from-email" placeholder="info@varadatech.com" />
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button class="btn btn-ghost" id="test-brevo-btn" onclick="testBrevoAPI()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Test API Key
+          </button>
+          <button class="btn btn-ghost" id="save-brevo-btn" onclick="saveBrevoKey()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Save API Key
+          </button>
+        </div>
+        <div id="brevo-result" class="mt-3"></div>
       </div>
 
       <!-- ★ Send Test Email — shows exact error if Brevo fails -->
@@ -428,27 +428,17 @@ async function saveSendingSettings() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
 
-  // Auto-save the Railway URL if field shows localhost
-  const urlField = document.getElementById('app-url');
-  if (!urlField.value || urlField.value.includes('localhost')) {
-    urlField.value = 'https://automation-email-production.up.railway.app';
-    try { await API.post('/api/settings/app-url', { url: urlField.value }); } catch(e) {}
-  }
-
-  // Check Brevo API status → show/hide SMTP section
+  // Check sending method status
   try {
     const status = await API.get('/api/settings/status');
     const brevoResult = document.getElementById('brevo-result');
-    const smtpCard = document.getElementById('smtp-card');
 
     if (status.method === 'brevo-api') {
-      // Brevo active → hide SMTP (not needed), show success
-      if (smtpCard) smtpCard.style.display = 'none';
-      brevoResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Brevo API is ACTIVE — emails send via Brevo. No SMTP password needed.</span></div>`;
+      if (brevoResult) brevoResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Brevo API is active (Railway mode). SMTP below is inactive.</span></div>`;
+    } else if (status.method === 'smtp') {
+      if (brevoResult) brevoResult.innerHTML = `<div class="alert" style="background:#f0fdf4;border-color:#86efac;color:#166534"><span>ℹ️ Using Titan SMTP for sending. Brevo API is not configured (not needed).</span></div>`;
     } else {
-      // No Brevo → show SMTP section
-      if (smtpCard) smtpCard.style.display = 'block';
-      brevoResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ Add your Brevo API key above and save it to enable email sending.</span></div>`;
+      if (brevoResult) brevoResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ No email method active. Fill in SMTP settings above and click "Save SMTP Settings".</span></div>`;
     }
   } catch(e) {}
 });

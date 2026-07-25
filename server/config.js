@@ -1,24 +1,25 @@
 /**
  * TitanMail — Default Configuration
- * Credentials are loaded from Railway Variables (set once, work forever).
- * Fallback values are used if env vars are not set.
+ * Values are loaded from environment variables (Render / Railway / .env).
+ * Set these in your hosting dashboard → Environment Variables.
  */
 module.exports = {
-  // ── Brevo API (Primary email sender — works on Railway 24/7) ───────────────
-  // Set BREVO_API_KEY in Railway Variables → persists forever, never needs re-entry
+  // ── Primary Email Sender ────────────────────────────────────────────────────
+  // Option A: Titan SMTP (works on Render, local — does NOT work on Railway)
+  SMTP_HOST:   process.env.SMTP_HOST   || 'smtp.titan.email',
+  SMTP_PORT:   process.env.SMTP_PORT   || '587',
+  SMTP_SECURE: process.env.SMTP_SECURE || 'false',   // false = TLS/STARTTLS on 587
+  SMTP_USER:   process.env.SMTP_USER   || '',         // info@varadatech.com
+  SMTP_PASS:   process.env.SMTP_PASS   || '',         // your Titan email password
+
+  // Option B: Brevo HTTP API (works on Railway — leave blank if using Titan SMTP)
   BREVO_API_KEY: process.env.BREVO_API_KEY || '',
 
   // ── Sender identity ────────────────────────────────────────────────────────
   FROM_EMAIL: process.env.FROM_EMAIL || 'info@varadatech.com',
   FROM_NAME:  process.env.FROM_NAME  || 'VaradaTech',
 
-  // ── Public app URL (for Gmail open tracking) ───────────────────────────────
-  APP_URL: process.env.APP_URL || 'https://automation-email-production.up.railway.app',
-
-  // ── GoDaddy SMTP (fallback for local use) ──────────────────────────────────
-  SMTP_HOST:   process.env.SMTP_HOST   || 'smtpout.secureserver.net',
-  SMTP_PORT:   process.env.SMTP_PORT   || '465',
-  SMTP_SECURE: process.env.SMTP_SECURE || 'true',
-  SMTP_USER:   process.env.SMTP_USER   || 'info@varadatech.com',
-  SMTP_PASS:   process.env.SMTP_PASS   || '',
+  // ── Public app URL (for email open/click tracking) ─────────────────────────
+  // Set this to your Render URL: https://your-app-name.onrender.com
+  APP_URL: process.env.APP_URL || '',
 };
