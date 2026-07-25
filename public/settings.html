@@ -43,9 +43,9 @@
           Public App URL
         </div>
         <div class="form-group mb-3">
-          <label>Your App URL <span style="font-size:11px;color:var(--text-muted)">(used for email open/click tracking — no trailing slash)</span></label>
-          <input type="text" class="input" id="app-url" placeholder="https://your-app.onrender.com" />
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Paste your Render URL here. All tracking links in emails will use this address.</div>
+          <label>Your Render URL <span style="font-size:11px;color:var(--text-muted)">(used for email open/click tracking)</span></label>
+          <input type="text" class="input" id="app-url" placeholder="https://automation-email-u0b2.onrender.com" />
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">This URL is embedded in tracking pixels and unsubscribe links inside every email.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveAppUrl()">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -53,47 +53,54 @@
         </button>
       </div>
 
-      <!-- ★ SMTP / Email Server (PRIMARY — Titan, GoDaddy, or any SMTP) -->
-      <div class="card mb-5" id="smtp-card" style="border-color:var(--blue);border-width:2px">
-        <div class="section-title mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-          SMTP / Email Server <span style="font-size:11px;color:var(--blue);font-weight:600;margin-left:6px">★ PRIMARY — Titan Mail SMTP</span>
+      <!-- ★ Resend API — PRIMARY email sender -->
+      <div class="card mb-5" style="border-color:var(--blue);border-width:2px">
+        <div class="section-title mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Email Sending <span style="font-size:11px;color:var(--blue);font-weight:600;margin-left:6px">★ Resend API — Sends from info@varadatech.com</span>
         </div>
-        <div class="alert alert-success mb-3" style="margin-top:0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <div>Use your <strong>Titan / GoDaddy SMTP credentials</strong> to send emails directly from <strong>info@varadatech.com</strong>. Works on Render and local — no third-party API needed.</div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>SMTP Host</label><input type="text" class="input" id="smtp-host" placeholder="smtp.titan.email" /></div>
-          <div class="form-group"><label>Port</label><input type="number" class="input" id="smtp-port" placeholder="587" /></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Email (Username)</label><input type="email" class="input" id="smtp-user" placeholder="info@varadatech.com" /></div>
-          <div class="form-group"><label>Password</label><input type="password" class="input" id="smtp-pass" placeholder="••••••••••" /></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Connection Type</label>
-            <select class="select" id="smtp-secure">
-              <option value="false">STARTTLS — Port 587 (Recommended for Titan)</option>
-              <option value="true">SSL — Port 465</option>
-            </select>
-          </div>
-          <div class="form-group"><label>From Name</label><input type="text" class="input" id="from-name" placeholder="VaradaTech" /></div>
-        </div>
-        <div class="flex gap-2 mt-2">
-          <button class="btn btn-ghost" id="test-btn" onclick="testSMTP()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Test SMTP
-          </button>
-          <button class="btn btn-primary" id="save-smtp-btn" onclick="saveSettings()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Save SMTP Settings
-          </button>
-        </div>
-        <div id="smtp-result" class="mt-3"></div>
-      </div>
 
+        <!-- How it works banner -->
+        <div style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #bfdbfe;border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:13px">
+          <div style="font-weight:600;color:#1d4ed8;margin-bottom:6px">⚡ How this works</div>
+          <div style="color:#374151;line-height:1.6">
+            Resend sends emails <strong>FROM info@varadatech.com</strong> via HTTPS (port 443) — 
+            works on Render free tier. No SMTP port restrictions. Free plan: <strong>3,000 emails/month</strong>.
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:#6b7280">
+            📌 Setup: <a href="https://resend.com" target="_blank" style="color:#2563eb">Sign up at resend.com</a> → Add Domain (varadatech.com) → Add DNS records → Get API Key → Paste below.
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>Resend API Key <span style="font-size:11px;color:var(--text-muted)">(starts with re_...)</span></label>
+          <input type="password" class="input" id="resend-api-key" placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+          <div id="resend-key-preview" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
+        </div>
+
+        <div class="form-row mb-3">
+          <div class="form-group">
+            <label>From Email <span style="font-size:11px;color:var(--text-muted)">(must be verified in Resend)</span></label>
+            <input type="email" class="input" id="from-email" placeholder="info@varadatech.com" />
+          </div>
+          <div class="form-group">
+            <label>From Name</label>
+            <input type="text" class="input" id="from-name" placeholder="VaradaTech" />
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-2">
+          <button class="btn btn-ghost" id="test-resend-btn" onclick="testResendKey()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Test API Key
+          </button>
+          <button class="btn btn-primary" id="save-resend-btn" onclick="saveResendKey()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Settings
+          </button>
+        </div>
+        <div id="resend-result" class="mt-3"></div>
+      </div>
 
       <!-- Send Test Email -->
       <div class="card mb-5" style="border-color:#10b981;border-width:2px">
@@ -111,12 +118,12 @@
         </button>
         <div id="test-email-result" class="mt-3"></div>
         <div id="failed-logs-section" class="mt-3" style="display:none">
-          <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--red)">❌ Recent Failed Emails (with error reasons):</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--red)">❌ Recent Failed Emails:</div>
           <div id="failed-logs-list"></div>
         </div>
       </div>
 
-      <!-- Sending Settings -->
+      <!-- Sending Limits -->
       <div class="card mb-5">
         <div class="section-title mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -124,14 +131,14 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Batch Size</label>
+            <label>Emails per Batch</label>
             <input type="number" class="input" id="batch-size" value="50" min="1" max="200" />
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Emails sent per batch (GoDaddy limit: ~500/day)</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Resend free plan: 100 emails/day</div>
           </div>
           <div class="form-group">
-            <label>Delay Between Batches (ms)</label>
-            <input type="number" class="input" id="batch-delay" value="1000" min="500" />
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Milliseconds to wait between each email (1000 = 1 second)</div>
+            <label>Delay Between Emails (ms)</label>
+            <input type="number" class="input" id="batch-delay" value="1000" min="300" />
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">1000 = 1 second pause between each send</div>
           </div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveSendingSettings()">
@@ -152,20 +159,14 @@
               <div style="font-weight:600;font-size:13px">Follow-up Processor</div>
               <div style="font-size:12px;color:var(--text-muted)">Checks for due follow-up emails every hour</div>
             </div>
-            <span class="badge badge-active">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Running
-            </span>
+            <span class="badge badge-active"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Running</span>
           </div>
           <div class="flex items-center justify-between" style="padding:10px 0">
             <div>
               <div style="font-weight:600;font-size:13px">Scheduled Campaign Trigger</div>
               <div style="font-size:12px;color:var(--text-muted)">Fires scheduled campaigns every minute</div>
             </div>
-            <span class="badge badge-active">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Running
-            </span>
+            <span class="badge badge-active"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Running</span>
           </div>
         </div>
       </div>
@@ -196,14 +197,6 @@
                 <td style="padding:7px 12px">Mumbai</td>
                 <td style="padding:7px 12px">Manager</td>
               </tr>
-              <tr>
-                <td style="padding:7px 12px">Priya Patel</td>
-                <td style="padding:7px 12px;color:var(--blue)">priya@gmail.com</td>
-                <td style="padding:7px 12px">StartupXYZ</td>
-                <td style="padding:7px 12px">9988776655</td>
-                <td style="padding:7px 12px">Bangalore</td>
-                <td style="padding:7px 12px">Founder</td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -217,96 +210,77 @@
 
 <script src="/js/app.js"></script>
 <script>
+// ── Load saved settings into form ─────────────────────────────────────────────
 async function loadSettings() {
   try {
-    const res = await API.get('/api/analytics/settings');
+    const res = await API.get('/api/settings');
     const s = res.settings || {};
-    document.getElementById('smtp-host').value   = s.smtp_host   || 'smtpout.secureserver.net';
-    document.getElementById('smtp-port').value   = s.smtp_port   || '465';
-    document.getElementById('smtp-user').value   = s.smtp_user   || 'info@varadatech.com';
-    document.getElementById('smtp-pass').value   = s.smtp_pass   || '';
-    document.getElementById('smtp-secure').value = (s.smtp_secure === 'true') ? 'true' : 'false';
-    document.getElementById('from-name').value   = s.from_name   || 'VaradaTech';
-    document.getElementById('from-email').value  = s.from_email  || 'info@varadatech.com';
-    document.getElementById('app-url').value     = s.app_url     || 'https://automation-email-u0b2.onrender.com';
-    document.getElementById('batch-size').value  = s.batch_size  || '50';
-    document.getElementById('batch-delay').value = s.batch_delay_ms || '1000';
+    document.getElementById('app-url').value      = s.app_url    || 'https://automation-email-u0b2.onrender.com';
+    document.getElementById('from-email').value   = s.from_email || 'info@varadatech.com';
+    document.getElementById('from-name').value    = s.from_name  || 'VaradaTech';
+    document.getElementById('batch-size').value   = s.batch_size || '50';
+    document.getElementById('batch-delay').value  = s.batch_delay_ms || '1000';
+    // Show preview of saved API key (masked)
+    if (s.resend_api_key_preview) {
+      document.getElementById('resend-key-preview').textContent = `Saved key: ${s.resend_api_key_preview}`;
+    }
   } catch(e) {}
 }
 
+// ── Save Public App URL ────────────────────────────────────────────────────────
 async function saveAppUrl() {
   const url = document.getElementById('app-url').value.trim().replace(/\/$/, '');
-  if (!url) return showToast('warning','Required','Please enter a URL');
+  if (!url) return showToast('warning','Required','Please enter your Render URL');
   try {
     await API.post('/api/settings/app-url', { url });
-    showToast('success','Saved','Public URL saved — future emails will use this URL for tracking');
-  } catch(e) { showToast('error','Error',e.message); }
+    showToast('success','Saved','Tracking URL saved ✅');
+  } catch(e) { showToast('error','Error', e.message); }
 }
 
-
-async function saveSettings() {
-  const btn = document.getElementById('save-smtp-btn');
+// ── Save Resend API Key ────────────────────────────────────────────────────────
+async function saveResendKey() {
+  const btn = document.getElementById('save-resend-btn');
   setButtonLoading(btn, true, 'Saving…');
   try {
-    await API.post('/api/settings/smtp', {
-      host:     document.getElementById('smtp-host').value,
-      port:     document.getElementById('smtp-port').value,
-      user:     document.getElementById('smtp-user').value,
-      pass:     document.getElementById('smtp-pass').value,
-      secure:   document.getElementById('smtp-secure').value,
-      fromName: document.getElementById('from-name').value,
-    });
-    showToast('success','Saved','SMTP settings updated');
-  } catch(e) { showToast('error','Error',e.message); }
+    const apiKey    = document.getElementById('resend-api-key').value.trim();
+    const fromEmail = document.getElementById('from-email').value.trim();
+    const fromName  = document.getElementById('from-name').value.trim();
+    if (!apiKey) return showToast('warning','Required','Please enter your Resend API key (starts with re_)');
+    if (!apiKey.startsWith('re_')) return showToast('warning','Invalid','Resend API keys start with re_ — check your key');
+    await API.post('/api/settings/resend', { apiKey, fromEmail, fromName });
+    showToast('success','Saved','Resend API key saved ✅ — click Test to verify');
+    document.getElementById('resend-key-preview').textContent = `Saved key: ${apiKey.substring(0,8)}••••••••`;
+    document.getElementById('resend-api-key').value = ''; // clear for security
+  } catch(e) { showToast('error','Error', e.message); }
   finally { setButtonLoading(btn, false); }
 }
 
-async function testSMTP() {
-  const btn = document.getElementById('test-btn');
-  const result = document.getElementById('smtp-result');
+// ── Test Resend API Key ────────────────────────────────────────────────────────
+async function testResendKey() {
+  const btn    = document.getElementById('test-resend-btn');
+  const result = document.getElementById('resend-result');
+  const apiKey = document.getElementById('resend-api-key').value.trim();
   setButtonLoading(btn, true, 'Testing…');
-  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Connecting to SMTP server… (may take up to 30s)</div>';
+  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Verifying API key with Resend…</div>';
   try {
-    // First save current settings so the server uses them
-    await API.post('/api/settings/smtp', {
-      host: document.getElementById('smtp-host').value,
-      port: document.getElementById('smtp-port').value,
-      user: document.getElementById('smtp-user').value,
-      pass: document.getElementById('smtp-pass').value,
-      secure: document.getElementById('smtp-secure').value,
-      fromName: document.getElementById('from-name').value,
+    // Save first if a key is typed
+    if (apiKey) await API.post('/api/settings/resend', {
+      apiKey,
+      fromEmail: document.getElementById('from-email').value.trim(),
+      fromName:  document.getElementById('from-name').value.trim(),
     });
-    // Test with a 30-second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    let res;
-    try {
-      const raw = await fetch('/api/settings/test-smtp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      res = await raw.json();
-    } catch(fetchErr) {
-      clearTimeout(timeoutId);
-      if (fetchErr.name === 'AbortError') {
-        result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Connection timed out (30s).<br/><br/>🔧 Try these fixes:<br/>1. Try <strong>Port 465 with SSL</strong> instead<br/>2. Double-check your Titan email password<br/>3. Contact Render support — free tier may restrict outbound SMTP</span></div>`;
-        return;
-      }
-      throw fetchErr;
-    }
+    const res = await API.post('/api/settings/test-resend', { apiKey });
     if (res.success) {
       result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
     } else {
-      result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${res.message || 'Connection failed'}</span></div>`;
+      result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${res.message}</span></div>`;
     }
   } catch(e) {
-    result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${e.message}</span></div>`;
+    result.innerHTML = `<div class="alert alert-danger"><span>❌ ${e.message}</span></div>`;
   } finally { setButtonLoading(btn, false); }
 }
 
+// ── Send Test Email ────────────────────────────────────────────────────────────
 async function sendTestEmail() {
   const btn    = document.getElementById('send-test-btn');
   const result = document.getElementById('test-email-result');
@@ -314,26 +288,25 @@ async function sendTestEmail() {
   if (!to) { result.innerHTML = '<div class="alert alert-warning">Enter an email address first.</div>'; return; }
 
   setButtonLoading(btn, true, 'Sending…');
-  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Sending test email via Titan SMTP… (this can take up to 35s)</div>';
+  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Sending via Resend API… (usually takes 2–5 seconds)</div>';
 
   try {
-    // 35s client timeout so the button never hangs forever
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 35000);
-    let raw, res;
+    const timeoutId  = setTimeout(() => controller.abort(), 30000);
+    let res;
     try {
-      raw = await fetch('/api/settings/send-test', {
+      const raw = await fetch('/api/settings/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to }),
-        signal: controller.signal
+        signal: controller.signal,
       });
       clearTimeout(timeoutId);
       res = await raw.json();
     } catch(fetchErr) {
       clearTimeout(timeoutId);
       if (fetchErr.name === 'AbortError') {
-        result.innerHTML = `<div class="alert alert-danger"><strong>Timed out (35s).</strong><br/>🔧 SMTP is not reachable from Render. Try:<br/>1. Port 465 with SSL<br/>2. Check your Titan email password<br/>3. Check Render logs for the exact error</div>`;
+        result.innerHTML = `<div class="alert alert-danger"><strong>Request timed out (30s).</strong><br/>Make sure your Resend API key is saved and valid.</div>`;
         return;
       }
       throw fetchErr;
@@ -343,14 +316,11 @@ async function sendTestEmail() {
       result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
     } else {
       result.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${res.message}</div>`;
-      // Also show failed logs
       try {
         const logs = await API.get('/api/settings/failed-logs');
         if (logs.logs?.length) {
-          const logsSection = document.getElementById('failed-logs-section');
-          const logsList    = document.getElementById('failed-logs-list');
-          logsSection.style.display = 'block';
-          logsList.innerHTML = logs.logs.map(l =>
+          document.getElementById('failed-logs-section').style.display = 'block';
+          document.getElementById('failed-logs-list').innerHTML = logs.logs.map(l =>
             `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;font-size:12px">
               <div><strong>${l.email}</strong> — ${l.subject || 'no subject'}</div>
               <div style="color:var(--red);margin-top:4px">⚠️ ${l.error_message || 'Unknown error'}</div>
@@ -365,27 +335,29 @@ async function sendTestEmail() {
   } finally { setButtonLoading(btn, false); }
 }
 
+// ── Sending Limits ─────────────────────────────────────────────────────────────
 async function saveSendingSettings() {
   try {
     await API.post('/api/settings/sending', {
-      batchSize: document.getElementById('batch-size').value,
+      batchSize:    document.getElementById('batch-size').value,
       batchDelayMs: document.getElementById('batch-delay').value,
     });
     showToast('success','Saved','Sending limits updated');
   } catch(e) { showToast('error','Error',e.message); }
 }
 
+// ── On page load ───────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
 
-  // Show SMTP connection status
+  // Update sidebar status & show resend-result banner
   try {
     const status = await API.get('/api/settings/status');
-    const smtpResult = document.getElementById('smtp-result');
-    if (status.method === 'smtp') {
-      if (smtpResult) smtpResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Titan SMTP is connected and ready to send emails.</span></div>`;
+    const resendResult = document.getElementById('resend-result');
+    if (status.hasResend) {
+      if (resendResult) resendResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Resend API key is active — ready to send campaigns!</span></div>`;
     } else {
-      if (smtpResult) smtpResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ SMTP not configured. Fill in the fields above and click "Save SMTP Settings".</span></div>`;
+      if (resendResult) resendResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ No API key saved yet. Sign up at <a href="https://resend.com" target="_blank" style="color:#92400e;font-weight:600">resend.com</a>, add your domain, and paste the API key above.</span></div>`;
     }
   } catch(e) {}
 });

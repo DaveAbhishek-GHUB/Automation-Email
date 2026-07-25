@@ -1,88 +1,48 @@
-const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
-const { queries, run, get } = require('./db');
+const { queries, get } = require('./db');
 
-const APP_URL = process.env.APP_URL || 'https://automation-email-u0b2.onrender.com';
+const APP_URL = 'https://automation-email-u0b2.onrender.com';
 
-let transporter = null;
+// ─── Resend HTTP API ───────────────────────────────────────────────────────────
+// Uses port 443 (HTTPS) — works on ALL cloud hosts including Render free tier
+async function sendViaResend({ to, toName, subject, html, text, fromName, fromEmail, replyTo }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error('Resend API key not configured. Go to Settings and add your Resend API key.');
 
-// ─── SMTP Config ───────────────────────────────────────────────────────
-function getSmtpConfig() {
-  const port   = parseInt(process.env.SMTP_PORT   || '587');
-  const secure = (process.env.SMTP_SECURE || 'false') === 'true';
-  return {
-    host:   process.env.SMTP_HOST || 'smtp.titan.email',
-    port,
-    secure,  // true = SSL (465), false = STARTTLS (587)
-    auth: {
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || '',
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
     },
-    tls: { rejectUnauthorized: false },
-    pool:              false,    // no pool — avoids connection hangs on cloud
-    connectionTimeout: 12000,   // 12s to establish TCP connection
-    greetingTimeout:   12000,   // 12s to receive SMTP greeting
-    socketTimeout:     20000,   // 20s per socket operation
-  };
-}
+    body: JSON.stringify({
+      from:     `${fromName} <${fromEmail}>`,
+      to:       [to],
+      subject,
+      html,
+      text:     text || html.replace(/<[^>]*>/g, ''),
+      reply_to: replyTo || fromEmail,
+    }),
+  });
 
-function createTransporter() {
-  const config = getSmtpConfig();
-  if (!config.auth.user || !config.auth.pass) {
-    console.warn('⚠️  SMTP credentials not configured — set SMTP_USER and SMTP_PASS in Render Environment Variables.');
-    transporter = null;
-    return null;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(`Resend error: ${err.message || JSON.stringify(err)}`);
   }
-  transporter = nodemailer.createTransport(config);
-  console.log(`📧 SMTP transporter created: ${config.host}:${config.port}`);
-  return transporter;
+  return res.json();
 }
 
-// Load SMTP settings from DB into process.env, then create transporter
-async function createTransporterFromDB() {
-  try {
-    const keys = ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure','from_name','from_email'];
-    for (const key of keys) {
-      const row = await get(`SELECT value FROM settings WHERE key='${key}'`);
-      if (row?.value) process.env[key.toUpperCase()] = row.value;
-    }
-  } catch(e) { /* DB not ready yet */ }
-  return createTransporter();
-}
+// ─── Verify Resend API key ─────────────────────────────────────────────────────
+async function verifyResendKey(apiKey) {
+  const key = apiKey || process.env.RESEND_API_KEY;
+  if (!key) return { success: false, message: '❌ No API key provided' };
 
-// ─── Verify SMTP connection ──────────────────────────────────────────────
-async function verifyConnection() {
-  try {
-    // Reload latest credentials from DB
-    const keys = ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure'];
-    for (const key of keys) {
-      const row = await get(`SELECT value FROM settings WHERE key='${key}'`).catch(() => null);
-      if (row?.value) process.env[key.toUpperCase()] = row.value;
-    }
-
-    const t = createTransporter();
-    if (!t) return {
-      success: false,
-      message: '\u274c SMTP credentials missing. Enter Host, Port, Email, Password above and click Save SMTP Settings first.'
-    };
-
-    // Test with a 20s timeout — if it times out, the host/port is unreachable
-    await Promise.race([
-      t.verify(),
-      new Promise((_, rej) => setTimeout(() =>
-        rej(new Error(
-          'SMTP timed out (20s). Possible causes:\n' +
-          '1. Wrong password — double-check your Titan email password\n' +
-          '2. Try Port 465 with SSL instead of 587\n' +
-          '3. Your Render plan may block SMTP — try upgrading or contact Render support'
-        )), 20000))
-    ]);
-    await queries.setSetting('smtp_configured', 'true');
-    return { success: true, message: `\u2705 SMTP connected successfully via ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}!` };
-  } catch (err) {
-    await queries.setSetting('smtp_configured', 'false').catch(() => {});
-    return { success: false, message: `\u274c ${err.message}` };
-  }
+  const res = await fetch('https://api.resend.com/domains', {
+    headers: { 'Authorization': `Bearer ${key}` },
+  });
+  if (res.ok) return { success: true, message: '✅ Resend API key verified! Ready to send emails.' };
+  const err = await res.json().catch(() => ({ message: 'Invalid key' }));
+  return { success: false, message: `❌ ${err.message || 'Invalid Resend API key'}` };
 }
 
 // ─── Template helpers ──────────────────────────────────────────────────────────
@@ -109,9 +69,21 @@ function addClickTracking(html, trackingId, appUrl) {
   });
 }
 
-// ─── Send a single email via Titan SMTP ───────────────────────────────────────
+// ─── Load Resend key from DB into env ─────────────────────────────────────────
+async function loadResendKeyFromDB() {
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      const row = await get("SELECT value FROM settings WHERE key='resend_api_key'");
+      if (row?.value) process.env.RESEND_API_KEY = row.value;
+    }
+  } catch(e) {}
+}
+
+// ─── Send a single email ───────────────────────────────────────────────────────
 async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fromEmail, replyTo, trackingId, appUrl }) {
-  // Resolve app URL from DB → env → Render default
+  await loadResendKeyFromDB();
+
+  // Resolve app URL
   let resolvedAppUrl = appUrl || process.env.APP_URL || APP_URL;
   try {
     const s = await get("SELECT value FROM settings WHERE key='app_url'");
@@ -127,7 +99,7 @@ async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fr
     dbFromName  = fn?.value || null;
   } catch(e) {}
   const resolvedFromName  = fromName  || dbFromName  || process.env.FROM_NAME  || 'VaradaTech';
-  const resolvedFromEmail = fromEmail || dbFromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER || 'info@varadatech.com';
+  const resolvedFromEmail = fromEmail || dbFromEmail || process.env.FROM_EMAIL  || 'info@varadatech.com';
 
   // Add tracking
   let finalHtml = htmlBody || '';
@@ -137,33 +109,21 @@ async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fr
     finalHtml = addUnsubscribeLink(finalHtml, trackingId, resolvedAppUrl);
   }
 
-  // Ensure transporter is ready — recreate if stale
-  if (!transporter) createTransporter();
-  if (!transporter) throw new Error('SMTP not configured. Enter credentials in Settings → SMTP section → Save SMTP Settings.');
-
-  // Wrap with 30s timeout so Send Test button never hangs forever
-  const mailOptions = {
-    from:    `"${resolvedFromName}" <${resolvedFromEmail}>`,
-    to:      toName ? `"${toName}" <${to}>` : to,
-    replyTo: replyTo || resolvedFromEmail,
-    subject,
-    html:    finalHtml,
-    text:    textBody || finalHtml.replace(/<[^>]*>/g, ''),
-    headers: { 'X-Priority': '3', 'X-Mailer': 'TitanMail-1.0' },
-  };
-
-  return Promise.race([
-    transporter.sendMail(mailOptions),
-    new Promise((_, rej) => setTimeout(() =>
-      rej(new Error('Email send timed out (30s). SMTP may be unreachable. Check host/port or try port 465 with SSL.')), 30000))
-  ]);
+  return sendViaResend({
+    to, toName, subject,
+    html: finalHtml,
+    text: textBody,
+    fromName:  resolvedFromName,
+    fromEmail: resolvedFromEmail,
+    replyTo,
+  });
 }
 
 // ─── Bulk campaign sender ──────────────────────────────────────────────────────
 async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followupSequenceId = null }) {
   const { v4: uuidv4 } = require('uuid');
+  await loadResendKeyFromDB();
 
-  // Always use the DB/env app URL for tracking links
   let resolvedAppUrl = process.env.APP_URL || APP_URL;
   try {
     const s = await get("SELECT value FROM settings WHERE key='app_url'");
@@ -178,7 +138,7 @@ async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followup
   let sentCount = 0, failedCount = 0;
 
   for (let i = 0; i < contacts.length; i++) {
-    const contact = contacts[i];
+    const contact   = contacts[i];
     const trackingId = uuidv4();
 
     let customFields = {};
@@ -222,20 +182,15 @@ async function sendBulkCampaign({ campaign, contacts, followupStep = 0, followup
       console.error(`❌ Failed: ${contact.email} — ${err.message}`);
     }
 
-    // Batch delay to avoid SMTP rate limiting
     if ((i + 1) % batchSize === 0 && i < contacts.length - 1) {
       console.log(`⏳ Batch delay ${batchDelay}ms…`);
       await new Promise(r => setTimeout(r, batchDelay));
     } else if (i < contacts.length - 1) {
-      await new Promise(r => setTimeout(r, 300)); // 300ms between each email
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 
   return { sentCount, failedCount };
 }
 
-module.exports = {
-  createTransporter, createTransporterFromDB,
-  verifyConnection,
-  sendEmail, sendBulkCampaign, compileTemplate, getSmtpConfig,
-};
+module.exports = { sendEmail, sendBulkCampaign, compileTemplate, verifyResendKey, loadResendKeyFromDB };

@@ -1,15 +1,11 @@
 /**
  * TitanMail — Configuration
- * Set these as Environment Variables in Render Dashboard → Service → Environment.
- * Values here are defaults used if env vars are not set.
+ * Set these in Render Dashboard → Your Service → Environment Variables.
  */
 module.exports = {
-  // ── Titan Mail SMTP (Primary sender) ───────────────────────────────────────
-  SMTP_HOST:   process.env.SMTP_HOST   || 'smtp.titan.email',
-  SMTP_PORT:   process.env.SMTP_PORT   || '587',
-  SMTP_SECURE: process.env.SMTP_SECURE || 'false',   // false = STARTTLS on port 587
-  SMTP_USER:   process.env.SMTP_USER   || '',         // your Titan email: info@varadatech.com
-  SMTP_PASS:   process.env.SMTP_PASS   || '',         // your Titan email password
+  // ── Resend API (sends via HTTPS port 443 — works on all cloud hosts) ─────────
+  // Get free key at: https://resend.com → API Keys → Create API Key
+  RESEND_API_KEY: process.env.RESEND_API_KEY || '',
 
   // ── Sender identity ────────────────────────────────────────────────────────
   FROM_EMAIL: process.env.FROM_EMAIL || 'info@varadatech.com',
