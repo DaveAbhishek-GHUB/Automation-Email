@@ -35,8 +35,9 @@ async function executeCampaign(campaign) {
 
   const contacts = await getContactsForCampaign(campaign);
   if (!contacts.length) {
-    console.warn(`⚠️  No contacts for campaign ${campaign.id}`);
-    await queries.updateCampaignStatus('completed', campaign.id);
+    console.warn(`⚠️  Campaign "${campaign.name}" (ID:${campaign.id}) has NO CONTACTS — nothing to send.`);
+    console.warn(`   Fix: Add contacts on the Contacts page, then launch the campaign again.`);
+    await queries.updateCampaignStatus('draft', campaign.id); // reset to draft so user can re-launch
     return;
   }
 

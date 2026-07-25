@@ -169,14 +169,24 @@ function addClickTracking(html, trackingId, appUrl) {
 
 // ─── Send a single email (Brevo API → SMTP fallback) ─────────────────────────
 async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fromEmail, replyTo, trackingId, appUrl }) {
+  // Always resolve app URL from DB → env → hardcoded Railway URL
   let dbAppUrl = null;
   try {
     const s = await get("SELECT value FROM settings WHERE key='app_url'");
     dbAppUrl = s?.value || null;
   } catch(e) {}
-  const resolvedAppUrl   = dbAppUrl || appUrl || process.env.APP_URL || 'http://localhost:3000';
-  const resolvedFromName  = fromName  || process.env.FROM_NAME  || 'Email Marketing';
-  const resolvedFromEmail = fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+  const resolvedAppUrl = dbAppUrl || appUrl || process.env.APP_URL || 'https://automation-email-production.up.railway.app';
+
+  // Always resolve from_email — never let it be empty (Brevo rejects empty sender)
+  let dbFromEmail = null, dbFromName = null;
+  try {
+    const fe = await get("SELECT value FROM settings WHERE key='from_email'");
+    const fn = await get("SELECT value FROM settings WHERE key='from_name'");
+    dbFromEmail = fe?.value || null;
+    dbFromName  = fn?.value || null;
+  } catch(e) {}
+  const resolvedFromName  = fromName  || dbFromName  || process.env.FROM_NAME  || 'VaradaTech';
+  const resolvedFromEmail = fromEmail || dbFromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER || 'info@varadatech.com';
 
   let finalHtml = htmlBody || '';
   if (trackingId) {

@@ -2,11 +2,18 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const dataDir = path.join(__dirname, '..', 'data');
+// On Railway: volume is mounted at /app/data → DB persists across redeploys
+// Locally: uses ./data/database.sqlite
+const dataDir = process.env.DB_PATH
+  ? path.dirname(process.env.DB_PATH)
+  : (fs.existsSync('/app') ? '/app/data' : path.join(__dirname, '..', 'data'));
+
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = process.env.DB_PATH || path.join(dataDir, 'database.sqlite');
+console.log(`📂 Database path: ${dbPath}`);
 const db = new sqlite3.Database(dbPath);
+
 
 // Promise wrappers
 const run = (sql, params = []) => new Promise((res, rej) =>

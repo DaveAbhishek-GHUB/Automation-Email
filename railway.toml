@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node server/index.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Mount a persistent volume at /app/data so SQLite DB survives redeploys
+# Volume must be created in Railway Dashboard → Service → Volumes → Add Volume → mount at /app/data
+[[volumes]]
+name = "titanmail-data"
+mountPath = "/app/data"

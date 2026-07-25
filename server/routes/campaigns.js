@@ -120,6 +120,17 @@ router.post('/:id/send', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// POST /api/campaigns/:id/resend — reset and re-trigger (retry campaigns that failed or sent 0)
+router.post('/:id/resend', async (req, res) => {
+  try {
+    const { triggerCampaignNow } = require('../scheduler');
+    // Reset status to draft so triggerCampaignNow can pick it up
+    await queries.updateCampaignStatus('draft', req.params.id);
+    await triggerCampaignNow(parseInt(req.params.id));
+    res.json({ success: true, message: 'Campaign re-triggered successfully' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // POST /api/campaigns/:id/pause
 router.post('/:id/pause', async (req, res) => {
   try { await queries.updateCampaignStatus('paused', req.params.id); res.json({ success: true }); }
