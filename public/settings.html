@@ -94,35 +94,8 @@
         <div id="smtp-result" class="mt-3"></div>
       </div>
 
-      <!-- Brevo API Key (Optional — only needed for Railway hosting) -->
-      <div class="card mb-5">
-        <div class="section-title mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-          Brevo API Key <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-left:6px">(Optional — only for Railway hosting)</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Leave blank if using Titan SMTP above. Only needed if you host on Railway (which blocks SMTP ports).</div>
-        <div class="form-group mb-3">
-          <label>Brevo API Key <span style="font-size:11px;color:var(--text-muted)">(starts with xkeysib-...)</span></label>
-          <input type="password" class="input" id="brevo-api-key" placeholder="xkeysib-xxxxxxxxxxxxxxxx-xxxxxxxx" />
-        </div>
-        <div class="form-group mb-3">
-          <label>From Email <span style="font-size:11px;color:var(--text-muted)">(your verified sender email)</span></label>
-          <input type="email" class="input" id="from-email" placeholder="info@varadatech.com" />
-        </div>
-        <div class="flex gap-2 mt-2">
-          <button class="btn btn-ghost" id="test-brevo-btn" onclick="testBrevoAPI()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Test API Key
-          </button>
-          <button class="btn btn-ghost" id="save-brevo-btn" onclick="saveBrevoKey()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Save API Key
-          </button>
-        </div>
-        <div id="brevo-result" class="mt-3"></div>
-      </div>
 
-      <!-- ★ Send Test Email — shows exact error if Brevo fails -->
+      <!-- Send Test Email -->
       <div class="card mb-5" style="border-color:#10b981;border-width:2px">
         <div class="section-title mb-3">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
@@ -255,16 +228,9 @@ async function loadSettings() {
     document.getElementById('smtp-secure').value = (s.smtp_secure === 'true') ? 'true' : 'false';
     document.getElementById('from-name').value   = s.from_name   || 'VaradaTech';
     document.getElementById('from-email').value  = s.from_email  || 'info@varadatech.com';
-    document.getElementById('app-url').value     = s.app_url     || 'https://automation-email-production.up.railway.app';
-    // brevo_api_key is not returned by the API for security, but we show a placeholder if it's configured
-    const brevoInput = document.getElementById('brevo-api-key');
-    if (s.brevo_api_key) {
-      brevoInput.value = s.brevo_api_key;
-    } else {
-      brevoInput.placeholder = 'Pre-configured via config.js — click Test API Key to verify';
-    }
-    document.getElementById('batch-size').value = s.batch_size || '50';
-    document.getElementById('batch-delay').value= s.batch_delay_ms || '1000';
+    document.getElementById('app-url').value     = s.app_url     || 'https://automation-email-u0b2.onrender.com';
+    document.getElementById('batch-size').value  = s.batch_size  || '50';
+    document.getElementById('batch-delay').value = s.batch_delay_ms || '1000';
   } catch(e) {}
 }
 
@@ -277,43 +243,6 @@ async function saveAppUrl() {
   } catch(e) { showToast('error','Error',e.message); }
 }
 
-async function saveBrevoKey() {
-  const btn = document.getElementById('save-brevo-btn');
-  setButtonLoading(btn, true, 'Saving…');
-  try {
-    const apiKey   = document.getElementById('brevo-api-key').value.trim();
-    const fromEmail = document.getElementById('from-email').value.trim();
-    if (!apiKey) return showToast('warning','Required','Please enter your Brevo API key');
-    await API.post('/api/settings/brevo', { apiKey, fromEmail });
-    showToast('success','Saved','Brevo API key saved — emails will now send via Brevo!');
-  } catch(e) { showToast('error','Error', e.message); }
-  finally { setButtonLoading(btn, false); }
-}
-
-async function testBrevoAPI() {
-  const btn    = document.getElementById('test-brevo-btn');
-  const result = document.getElementById('brevo-result');
-  setButtonLoading(btn, true, 'Testing…');
-  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Connecting to Brevo API…</div>';
-  try {
-    // Save key first so server uses it
-    const apiKey    = document.getElementById('brevo-api-key').value.trim();
-    const fromEmail = document.getElementById('from-email').value.trim();
-    if (!apiKey) {
-      result.innerHTML = '<div class="alert alert-warning">Please enter your Brevo API key first.</div>';
-      return;
-    }
-    await API.post('/api/settings/brevo', { apiKey, fromEmail });
-    const res = await API.post('/api/settings/test-brevo', {});
-    if (res.success) {
-      result.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>${res.message}</span></div>`;
-    } else {
-      result.innerHTML = `<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${res.message}</span></div>`;
-    }
-  } catch(e) {
-    result.innerHTML = `<div class="alert alert-danger"><span>${e.message}</span></div>`;
-  } finally { setButtonLoading(btn, false); }
-}
 
 async function saveSettings() {
   const btn = document.getElementById('save-smtp-btn');
@@ -385,7 +314,7 @@ async function sendTestEmail() {
   if (!to) { result.innerHTML = '<div class="alert alert-warning">Enter an email address first.</div>'; return; }
 
   setButtonLoading(btn, true, 'Sending…');
-  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Sending test email via Brevo…</div>';
+  result.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Sending test email via Titan SMTP…</div>';
 
   try {
     const res = await API.post('/api/settings/send-test', { to });
@@ -428,17 +357,14 @@ async function saveSendingSettings() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
 
-  // Check sending method status
+  // Show SMTP connection status
   try {
     const status = await API.get('/api/settings/status');
-    const brevoResult = document.getElementById('brevo-result');
-
-    if (status.method === 'brevo-api') {
-      if (brevoResult) brevoResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Brevo API is active (Railway mode). SMTP below is inactive.</span></div>`;
-    } else if (status.method === 'smtp') {
-      if (brevoResult) brevoResult.innerHTML = `<div class="alert" style="background:#f0fdf4;border-color:#86efac;color:#166534"><span>ℹ️ Using Titan SMTP for sending. Brevo API is not configured (not needed).</span></div>`;
+    const smtpResult = document.getElementById('smtp-result');
+    if (status.method === 'smtp') {
+      if (smtpResult) smtpResult.innerHTML = `<div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Titan SMTP is connected and ready to send emails.</span></div>`;
     } else {
-      if (brevoResult) brevoResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ No email method active. Fill in SMTP settings above and click "Save SMTP Settings".</span></div>`;
+      if (smtpResult) smtpResult.innerHTML = `<div class="alert alert-warning"><span>⚠️ SMTP not configured. Fill in the fields above and click "Save SMTP Settings".</span></div>`;
     }
   } catch(e) {}
 });
