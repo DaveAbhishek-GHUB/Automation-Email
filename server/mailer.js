@@ -60,17 +60,24 @@ async function sendViaBrevoAPI({ to, toName, subject, html, text, fromName, from
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) throw new Error('Brevo API key not configured');
 
+  const senderEmail = fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+  const senderName  = fromName  || process.env.FROM_NAME  || 'VaradaTech';
+
   const body = {
-    sender: {
-      name:  fromName  || process.env.FROM_NAME  || 'VaradaTech',
-      email: fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER,
-    },
+    sender: { name: senderName, email: senderEmail },
     to: [{ email: to, name: toName || to }],
+    replyTo: { email: replyTo || senderEmail, name: senderName },
     subject,
     htmlContent: html,
     textContent: text,
+    // Headers that help land in Primary inbox instead of Promotions
+    headers: {
+      'X-Priority':          '3',
+      'X-Mailer':            'TitanMail-1.0',
+      'List-Unsubscribe':    `<mailto:unsubscribe@varadatech.com>`,
+      'Precedence':          'bulk',
+    },
   };
-  if (replyTo) body.replyTo = { email: replyTo };
 
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method:  'POST',

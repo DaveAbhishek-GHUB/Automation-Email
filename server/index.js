@@ -28,17 +28,22 @@ app.use('/api/analytics', require('./routes/analytics'));
 
 // ─── Tracking ────────────────────────────────────────────────────────────────
 
-// Open Pixel
+// Open Pixel — filters bots (Google Image Proxy, Outlook SafeLink etc.) to prevent false 100% opens
 app.get('/track/open/:trackingId', async (req, res) => {
-  try {
-    await queries.updateLogOpened(req.params.trackingId);
-    const log = await queries.getLogByTracking(req.params.trackingId);
-    if (log?.campaign_id) {
-      await run("UPDATE campaigns SET open_count=open_count+1,updated_at=CURRENT_TIMESTAMP WHERE id=?", [log.campaign_id]);
-    }
-  } catch (e) { /* silent */ }
+  const ua = req.headers['user-agent'] || '';
+  const isBot = /googleimageproxy|yahoo.*mail|outlook.*link|preview|bot|crawl|spider|facebookexternalhit/i.test(ua);
+
+  if (!isBot) {
+    try {
+      await queries.updateLogOpened(req.params.trackingId);
+      const log = await queries.getLogByTracking(req.params.trackingId);
+      if (log?.campaign_id) {
+        await run("UPDATE campaigns SET open_count=open_count+1,updated_at=CURRENT_TIMESTAMP WHERE id=?", [log.campaign_id]);
+      }
+    } catch (e) { /* silent */ }
+  }
   const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
-  res.set({ 'Content-Type': 'image/gif', 'Content-Length': pixel.length, 'Cache-Control': 'no-cache' });
+  res.set({ 'Content-Type': 'image/gif', 'Content-Length': pixel.length, 'Cache-Control': 'no-store, no-cache' });
   res.end(pixel);
 });
 
