@@ -6,22 +6,23 @@ const APP_URL = process.env.APP_URL || 'https://automation-email-u0b2.onrender.c
 
 let transporter = null;
 
-// ─── SMTP Config ───────────────────────────────────────────────────────────────
+// ─── SMTP Config ───────────────────────────────────────────────────────
 function getSmtpConfig() {
+  const port   = parseInt(process.env.SMTP_PORT   || '587');
+  const secure = (process.env.SMTP_SECURE || 'false') === 'true';
   return {
     host:   process.env.SMTP_HOST || 'smtp.titan.email',
-    port:   parseInt(process.env.SMTP_PORT || '587'),
-    secure: (process.env.SMTP_SECURE || 'false') === 'true',
+    port,
+    secure,  // true = SSL (465), false = STARTTLS (587)
     auth: {
       user: process.env.SMTP_USER || '',
       pass: process.env.SMTP_PASS || '',
     },
     tls: { rejectUnauthorized: false },
-    pool: true,
-    maxConnections: 3,
-    maxMessages: 10,
-    rateDelta: 1000,
-    rateLimit: 1,
+    pool:              false,    // no pool — avoids connection hangs on cloud
+    connectionTimeout: 12000,   // 12s to establish TCP connection
+    greetingTimeout:   12000,   // 12s to receive SMTP greeting
+    socketTimeout:     20000,   // 20s per socket operation
   };
 }
 
@@ -49,10 +50,10 @@ async function createTransporterFromDB() {
   return createTransporter();
 }
 
-// ─── Verify SMTP connection ────────────────────────────────────────────────────
+// ─── Verify SMTP connection ──────────────────────────────────────────────
 async function verifyConnection() {
   try {
-    // Reload from DB first
+    // Reload latest credentials from DB
     const keys = ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure'];
     for (const key of keys) {
       const row = await get(`SELECT value FROM settings WHERE key='${key}'`).catch(() => null);
@@ -60,18 +61,27 @@ async function verifyConnection() {
     }
 
     const t = createTransporter();
-    if (!t) return { success: false, message: '❌ SMTP credentials not set. Go to Settings → fill in SMTP Host, Port, Email, and Password → Save.' };
+    if (!t) return {
+      success: false,
+      message: '\u274c SMTP credentials missing. Enter Host, Port, Email, Password above and click Save SMTP Settings first.'
+    };
 
+    // Test with a 20s timeout — if it times out, the host/port is unreachable
     await Promise.race([
       t.verify(),
       new Promise((_, rej) => setTimeout(() =>
-        rej(new Error('SMTP connection timed out after 15s. Check your host/port/credentials.')), 15000))
+        rej(new Error(
+          'SMTP timed out (20s). Possible causes:\n' +
+          '1. Wrong password — double-check your Titan email password\n' +
+          '2. Try Port 465 with SSL instead of 587\n' +
+          '3. Your Render plan may block SMTP — try upgrading or contact Render support'
+        )), 20000))
     ]);
     await queries.setSetting('smtp_configured', 'true');
-    return { success: true, message: `✅ SMTP connected! Sending via ${process.env.SMTP_HOST || 'smtp.titan.email'}` };
+    return { success: true, message: `\u2705 SMTP connected successfully via ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}!` };
   } catch (err) {
     await queries.setSetting('smtp_configured', 'false').catch(() => {});
-    return { success: false, message: `❌ ${err.message}` };
+    return { success: false, message: `\u274c ${err.message}` };
   }
 }
 
@@ -127,22 +137,26 @@ async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fr
     finalHtml = addUnsubscribeLink(finalHtml, trackingId, resolvedAppUrl);
   }
 
-  // Ensure transporter is ready
+  // Ensure transporter is ready — recreate if stale
   if (!transporter) createTransporter();
-  if (!transporter) throw new Error('SMTP not configured. Add credentials in Settings → SMTP section → Save SMTP Settings.');
+  if (!transporter) throw new Error('SMTP not configured. Enter credentials in Settings → SMTP section → Save SMTP Settings.');
 
-  return transporter.sendMail({
+  // Wrap with 30s timeout so Send Test button never hangs forever
+  const mailOptions = {
     from:    `"${resolvedFromName}" <${resolvedFromEmail}>`,
     to:      toName ? `"${toName}" <${to}>` : to,
     replyTo: replyTo || resolvedFromEmail,
     subject,
     html:    finalHtml,
     text:    textBody || finalHtml.replace(/<[^>]*>/g, ''),
-    headers: {
-      'X-Priority': '3',
-      'X-Mailer':   'TitanMail-1.0',
-    },
-  });
+    headers: { 'X-Priority': '3', 'X-Mailer': 'TitanMail-1.0' },
+  };
+
+  return Promise.race([
+    transporter.sendMail(mailOptions),
+    new Promise((_, rej) => setTimeout(() =>
+      rej(new Error('Email send timed out (30s). SMTP may be unreachable. Check host/port or try port 465 with SSL.')), 30000))
+  ]);
 }
 
 // ─── Bulk campaign sender ──────────────────────────────────────────────────────
