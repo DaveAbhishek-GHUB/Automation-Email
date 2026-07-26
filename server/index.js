@@ -1,20 +1,76 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
+const cors    = require('cors');
+const session = require('express-session');
+const path    = require('path');
+const fs      = require('fs');
 const { initializeDatabase, queries, run, get, all } = require('./db');
 const { initializeScheduler } = require('./scheduler');
 const { createTransporter, createTransporterFromDB, verifyConnection } = require('./mailer');
 
+// App password — change APP_PASSWORD in .env to whatever you want
+const APP_PASSWORD = process.env.APP_PASSWORD || 'varadatech2024';
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ─── Session (30-day remember-me cookie) ───────────────────────────────────
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'titanmail-secret-2024',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 30 * 24 * 60 * 60 * 1000,  // 30 days — stay logged in
+    httpOnly: true,
+    sameSite: 'lax',
+  }
+}));
+
+// ─── Auth middleware ───────────────────────────────────────────────────────
+// Allow: login page, tracking pixels, static assets (css/js/img/fonts)
+const PUBLIC_PATHS  = ['/login', '/track/', '/unsubscribe/', '/favicon.ico'];
+const ASSET_EXTS    = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.webp'];
+
+function requireAuth(req, res, next) {
+  const isPublic  = PUBLIC_PATHS.some(p => req.path.startsWith(p));
+  const isAsset   = ASSET_EXTS.some(ext => req.path.endsWith(ext));
+  if (isPublic || isAsset || req.session?.loggedIn) return next();
+  // API calls get 401 JSON; page requests redirect to /login
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not authenticated' });
+  return res.redirect('/login');
+}
+
+// ─── Login routes ────────────────────────────────────────────────────────────
+app.get('/login', (req, res) => {
+  if (req.session?.loggedIn) return res.redirect('/');
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+app.post('/login', express.urlencoded({ extended: false }), (req, res) => {
+  const { password } = req.body;
+  if (password === APP_PASSWORD) {
+    req.session.loggedIn = true;
+    return res.redirect('/');
+  }
+  // Wrong password — show login page with simple error param
+  res.status(401).send(`
+    <!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/login?error=1"></head>
+    <body>Redirecting...</body></html>
+  `);
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/login');
+});
+
+// ─── Middleware (order matters: auth → static → routes) ─────────────────────
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Auth runs BEFORE static so HTML pages are protected
+app.use(requireAuth);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Uploads directory
