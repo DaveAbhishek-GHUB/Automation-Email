@@ -39,7 +39,8 @@ router.get('/:id/logs', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, subject, body_html, body_text, from_name, from_email, reply_to,
-      send_mode = 'once', scheduled_at, daily_time, list_ids = [], contact_ids = [], followups = [] } = req.body;
+      send_mode = 'once', scheduled_at, daily_time, followup_send_time,
+      list_ids = [], contact_ids = [], followups = [] } = req.body;
 
     if (!name || !subject || !body_html) return res.status(400).json({ error: 'name, subject, and body_html are required' });
 
@@ -56,7 +57,11 @@ router.post('/', async (req, res) => {
     });
     const campaignId = result.lastID;
 
-    // Save follow-up steps
+    // Save followup_send_time on the campaign record
+    const fst = followup_send_time || daily_time || '09:00';
+    await run(`UPDATE campaigns SET followup_send_time=? WHERE id=?`, [fst, campaignId]);
+
+    // Save follow-up steps — each step inherits the campaign send_time
     for (const fu of followups) {
       await queries.insertFollowup({
         campaign_id: campaignId,
@@ -65,6 +70,7 @@ router.post('/', async (req, res) => {
         subject: fu.subject,
         body_html: fu.body_html || '',
         body_text: fu.body_text || '',
+        send_time: fst,
       });
     }
 
@@ -150,6 +156,21 @@ router.post('/:id/schedule', async (req, res) => {
     await run(`UPDATE campaigns SET scheduled_at=?,send_mode=COALESCE(?,send_mode),daily_time=COALESCE(?,daily_time),status='scheduled',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
       [scheduled_at, send_mode, daily_time, req.params.id]);
     res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/campaigns/:id/followup-time — update send time for all follow-up steps
+router.put('/:id/followup-time', async (req, res) => {
+  try {
+    const { send_time } = req.body;
+    if (!send_time) return res.status(400).json({ error: 'send_time is required (HH:MM)' });
+    // Validate HH:MM format
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(send_time)) {
+      return res.status(400).json({ error: 'Invalid time format. Use HH:MM (e.g. 09:00)' });
+    }
+    await run(`UPDATE campaigns SET followup_send_time=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`, [send_time, req.params.id]);
+    await queries.updateFollowupSendTime(req.params.id, send_time);
+    res.json({ success: true, message: `Follow-up send time updated to ${send_time}` });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -96,6 +96,36 @@
 
 <script src="/js/app.js"></script>
 <script>
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); }
+function fmtTime24to12(t) {
+  if (!t) return '9:00 AM';
+  const [h,m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+function dateChip(date, isSent, isFuture) {
+  const label = fmtDate(date);
+  if (isSent)   return `<span class="chip chip-green">✓ ${label}</span>`;
+  if (isFuture) return `<span class="chip chip-orange">📅 ${label}</span>`;
+  return `<span class="chip chip-blue">${label}</span>`;
+}
+
+// Today's status badge: has the step been sent today / is it pending / catching up
+function todayStatusBadge(sendTime) {
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const timeLabel = fmtTime24to12(sendTime || '09:00');
+  if (hhmm >= (sendTime || '09:00')) {
+    return `<span class="chip chip-orange" title="Time passed — catch-up will send now">🔄 Sending now if due</span>`;
+  }
+  return `<span class="chip chip-blue" title="Will send at ${timeLabel} if emails are due">⏳ ${timeLabel}</span>`;
+}
+
+// ── Load followups ────────────────────────────────────────────────────────────
 async function loadFollowups() {
   const container = document.getElementById('followups-content');
   container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">Loading…</div>';
@@ -116,34 +146,6 @@ async function loadFollowups() {
       return;
     }
 
-    // ── Helper: add N days to a Date and return a formatted string ──────────────
-    function addDays(date, n) {
-      const d = new Date(date);
-      d.setDate(d.getDate() + n);
-      return d;
-    }
-
-    function fmtDate(d) {
-      return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-    }
-
-    function dateChip(date, isLaunch, isFuture, isSent) {
-      const label = fmtDate(date);
-      if (isSent) {
-        return `<span class="chip chip-green" title="Sent on this date">
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          ${label}
-        </span>`;
-      }
-      if (isFuture) {
-        return `<span class="chip chip-orange" title="Scheduled send date">
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          ${label}
-        </span>`;
-      }
-      return `<span class="chip chip-blue" title="Launch date">${label}</span>`;
-    }
-
     const today = new Date();
 
     const cards = await Promise.all(seqCampaigns.map(async c => {
@@ -153,8 +155,7 @@ async function loadFollowups() {
         followups = detail.followups || [];
       } catch(e) {}
 
-      // ── Determine the anchor date (Day 0) ──────────────────────────────────
-      // Priority: actual first sent log → scheduled_at → created_at
+      // Anchor date (Day 0)
       let launchDate = null;
       try {
         const logs = await API.get(`/api/campaigns/${c.id}/logs?limit=1&step=0`);
@@ -166,12 +167,15 @@ async function loadFollowups() {
       const launched = c.status !== 'draft' && c.status !== 'scheduled';
       let cumulativeDays = 0;
 
+      // Resolve send time for this campaign
+      const sendTime = c.followup_send_time || c.daily_time || '09:00';
+      const timeLabel = fmtTime24to12(sendTime);
+
       const stepsHtml = [
         // Step 0 — Initial Email
         (() => {
           const stepDate = new Date(launchDate);
           const isSent = launched && c.sent_count > 0;
-          const isFuture = !isSent;
           return `<div class="step-row">
             <div class="step-num launch">1</div>
             <div style="flex:1;min-width:0">
@@ -179,7 +183,7 @@ async function loadFollowups() {
               <div style="font-size:12px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.subject}</div>
             </div>
             <div class="flex gap-2 items-center flex-wrap" style="justify-content:flex-end">
-              ${dateChip(stepDate, true, isFuture, isSent)}
+              ${dateChip(stepDate, isSent, !isSent)}
               <span class="chip ${c.sent_count > 0 ? 'chip-green' : 'chip-gray'}">${c.sent_count} sent</span>
             </div>
           </div>`;
@@ -191,6 +195,7 @@ async function loadFollowups() {
           const isPast   = stepDate <= today && launched;
           const isFuture = stepDate > today || !launched;
           const stepActive = fu.status === 'active';
+          const isToday  = stepDate.toDateString() === today.toDateString() && launched;
           return `
           <div class="step-connector"></div>
           <div class="step-row">
@@ -201,7 +206,8 @@ async function loadFollowups() {
             </div>
             <div class="flex gap-2 items-center flex-wrap" style="justify-content:flex-end">
               <span style="font-size:11px;color:var(--text-muted)">+${fu.delay_days}d</span>
-              ${dateChip(stepDate, false, isFuture, isPast && stepActive)}
+              ${dateChip(stepDate, isPast && stepActive, isFuture)}
+              ${isToday && stepActive ? todayStatusBadge(sendTime) : ''}
               <span class="chip ${stepActive ? (isPast ? 'chip-green' : 'chip-blue') : 'chip-gray'}">
                 ${stepActive ? (isPast ? 'Sent' : 'Scheduled') : fu.status}
               </span>
@@ -210,9 +216,8 @@ async function loadFollowups() {
         })
       ].join('');
 
-      // Total campaign duration
       const totalDays = followups.reduce((sum, fu) => sum + fu.delay_days, 0);
-      const endDate = addDays(launchDate, totalDays);
+      const endDate   = addDays(launchDate, totalDays);
 
       return `
         <div class="sequence-card">
@@ -232,6 +237,25 @@ async function loadFollowups() {
               </a>
             </div>
           </div>
+
+          <!-- ⏰ Follow-up Send Time section -->
+          ${followups.length > 0 ? `
+          <div style="background:var(--blue-faint);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">⏰ FOLLOW-UP SEND TIME</div>
+              <div style="font-size:20px;font-weight:800;color:var(--blue)">${timeLabel}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">daily — fires at this time when app is running</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+              <input type="time" id="time-input-${c.id}" value="${sendTime}"
+                style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card);color:var(--text);font-size:14px;font-weight:700"
+              />
+              <button class="btn btn-primary btn-sm" onclick="updateSendTime(${c.id})">
+                Save Time
+              </button>
+            </div>
+          </div>` : ''}
+
           <div>${stepsHtml}</div>
           <div class="flex gap-4 mt-3" style="padding-top:12px;border-top:1px solid var(--divider);flex-wrap:wrap;row-gap:4px">
             <div style="font-size:12px;color:var(--text-muted)">
@@ -258,6 +282,17 @@ async function launchCampaign(id) {
   try {
     await API.post(`/api/campaigns/${id}/send`);
     showToast('success','Launched!','Follow-ups will run automatically.');
+    loadFollowups();
+  } catch(e) { showToast('error','Error',e.message); }
+}
+
+async function updateSendTime(campaignId) {
+  const input = document.getElementById(`time-input-${campaignId}`);
+  const sendTime = input?.value;
+  if (!sendTime) return;
+  try {
+    await API.put(`/api/campaigns/${campaignId}/followup-time`, { send_time: sendTime });
+    showToast('success', '⏰ Time Updated!', `Follow-ups will now send at ${fmtTime24to12(sendTime)} daily.`);
     loadFollowups();
   } catch(e) { showToast('error','Error',e.message); }
 }

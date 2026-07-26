@@ -100,6 +100,10 @@ async function initializeDatabase() {
   await run(`CREATE INDEX IF NOT EXISTS idx_email_logs_tracking ON email_logs(tracking_id)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status)`);
 
+  // Safe migrations — add columns if they don't exist yet
+  await run(`ALTER TABLE followup_sequences ADD COLUMN send_time TEXT DEFAULT '09:00'`).catch(() => {});
+  await run(`ALTER TABLE campaigns ADD COLUMN followup_send_time TEXT DEFAULT '09:00'`).catch(() => {});
+
   // Default settings
   const defaults = [
     ['daily_send_time','09:00'],['batch_size','50'],['batch_delay_ms','1000'],
@@ -148,8 +152,12 @@ const queries = {
 
   getFollowupsByCampaign: (campaignId) => all('SELECT * FROM followup_sequences WHERE campaign_id=? ORDER BY step_number ASC', [campaignId]),
   insertFollowup: (fu) => run(
-    `INSERT INTO followup_sequences (campaign_id,step_number,delay_days,subject,body_html,body_text) VALUES (?,?,?,?,?,?)`,
-    [fu.campaign_id,fu.step_number,fu.delay_days,fu.subject,fu.body_html,fu.body_text]
+    `INSERT INTO followup_sequences (campaign_id,step_number,delay_days,subject,body_html,body_text,send_time) VALUES (?,?,?,?,?,?,?)`,
+    [fu.campaign_id,fu.step_number,fu.delay_days,fu.subject,fu.body_html,fu.body_text,fu.send_time||'09:00']
+  ),
+  updateFollowupSendTime: (campaignId, sendTime) => run(
+    `UPDATE followup_sequences SET send_time=? WHERE campaign_id=?`,
+    [sendTime, campaignId]
   ),
   deleteFollowupsByCampaign: (campaignId) => run('DELETE FROM followup_sequences WHERE campaign_id=?', [campaignId]),
 
@@ -166,6 +174,12 @@ const queries = {
 
   wasFollowupSent: (campaignId, email, step) => get(
     `SELECT id FROM email_logs WHERE campaign_id=? AND email=? AND followup_step=? AND status IN ('sent','opened','clicked')`,
+    [campaignId, email, step]
+  ),
+  wasFollowupSentToday: (campaignId, email, step) => get(
+    `SELECT id FROM email_logs WHERE campaign_id=? AND email=? AND followup_step=?
+     AND status IN ('sent','opened','clicked','pending')
+     AND DATE(sent_at,'localtime') = DATE('now','localtime')`,
     [campaignId, email, step]
   ),
   getPendingFollowups: (campaignId, prevStep, days) => all(

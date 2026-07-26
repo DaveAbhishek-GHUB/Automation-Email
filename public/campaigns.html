@@ -259,16 +259,27 @@
               <span style="font-size:14px;color:var(--text-secondary);margin-left:4px">follow-ups</span>
             </div>
           </div>
+
+          <!-- Follow-up Send Time -->
+          <div class="form-group" id="followup-time-group">
+            <label>⏰ Follow-up Send Time <span style="font-size:11px;color:var(--text-muted);font-weight:400">(what time should follow-up emails fire each day?)</span></label>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">The scheduler checks every minute. If your Mac was off at this time, it catches up immediately on startup.</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <input type="time" class="input" id="followup-send-time" value="09:00" style="max-width:160px;font-size:20px;font-weight:700;letter-spacing:1px" oninput="renderTimeline()" />
+              <span id="followup-time-display" style="font-size:16px;font-weight:700;color:var(--blue);background:var(--blue-faint);padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border)">9:00 AM</span>
+              <span style="font-size:13px;color:var(--text-muted)">daily</span>
+            </div>
+          </div>
         </div>
 
         <!-- Live Timeline Preview -->
         <div class="section-title mb-3">📅 Your Email Timeline</div>
         <div class="timeline-preview" id="timeline-preview"></div>
 
-        <div class="card mt-4" style="background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.2)">
-          <div style="font-size:13px;color:var(--yellow)">
-            ⏰ The follow-up scheduler runs <strong>every hour</strong>. 
-            Emails will be sent within 1 hour of their scheduled day.
+        <div class="card mt-4" style="background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.2)">
+          <div style="font-size:13px;color:var(--green)">
+            ⏰ Follow-up emails fire at <strong id="time-hint">9:00 AM</strong> every day. 
+            <span style="color:var(--text-muted)">If the app starts late, it catches up and sends immediately.</span>
           </div>
         </div>
       </div>
@@ -383,6 +394,18 @@ function renderTimeline() {
   const el    = document.getElementById('timeline-preview');
   if (!el) return;
 
+  // Update AM/PM display
+  const timeVal = document.getElementById('followup-send-time')?.value || '09:00';
+  const [hStr, mStr] = timeVal.split(':');
+  const h = parseInt(hStr), m = parseInt(mStr);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 === 0 ? 12 : h % 12;
+  const timeLabel = `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+  const dispEl = document.getElementById('followup-time-display');
+  if (dispEl) dispEl.textContent = timeLabel;
+  const hintEl = document.getElementById('time-hint');
+  if (hintEl) hintEl.textContent = timeLabel;
+
   let html = `
     <div class="tl-dot">
       <div class="tl-circle launch">1</div>
@@ -398,7 +421,7 @@ function renderTimeline() {
       </div>
       <div class="tl-dot">
         <div class="tl-circle followup">${i + 1}</div>
-        <div class="tl-label">Follow-up ${i}<br/><strong>Day ${day}</strong></div>
+        <div class="tl-label">Follow-up ${i}<br/><strong>Day ${day}</strong><br/><span style="font-size:10px;color:var(--blue)">${timeLabel}</span></div>
       </div>`;
   }
 
@@ -417,6 +440,12 @@ function renderSummary() {
   const gap      = parseInt(document.getElementById('gap-days')?.value || 1);
   const count    = parseInt(document.getElementById('followup-count')?.value || 0);
   const lists    = [...document.querySelectorAll('.list-check:checked')].length;
+  const timeVal  = document.getElementById('followup-send-time')?.value || '09:00';
+  const [hStr, mStr] = timeVal.split(':');
+  const h = parseInt(hStr);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const timeLabel = `${h12}:${mStr} ${ampm}`;
 
   const el = document.getElementById('launch-summary');
   el.innerHTML = `
@@ -428,7 +457,7 @@ function renderSummary() {
       <div class="card" style="background:rgba(16,185,129,0.06)">
         <div class="text-xs text-muted mb-1">Sequence</div>
         <div style="font-weight:700">1 launch + ${count} follow-up${count!==1?'s':''}</div>
-        <div class="text-xs text-muted">Every ${gap} day${gap!==1?'s':''}</div>
+        <div class="text-xs text-muted">Every ${gap} day${gap!==1?'s':''} at <strong>${timeLabel}</strong></div>
       </div>
       <div class="card" style="background:rgba(245,158,11,0.06)">
         <div class="text-xs text-muted mb-1">Total Duration</div>
@@ -574,6 +603,7 @@ async function saveCampaign() {
 
   const mode    = document.querySelector('input[name="send-mode"]:checked').value;
   const listIds = [...document.querySelectorAll('.list-check:checked')].map(c => parseInt(c.value));
+  const fuSendTime = document.getElementById('followup-send-time')?.value || '09:00';
 
   // Build followups array — same subject/body, delay_days = gap, step 1..N
   const followups = [];
@@ -601,6 +631,7 @@ async function saveCampaign() {
     contact_ids: [],
     followups,
   };
+    payload.followup_send_time = fuSendTime;
 
   setButtonLoading(btn, true, 'Launching…');
   try {
