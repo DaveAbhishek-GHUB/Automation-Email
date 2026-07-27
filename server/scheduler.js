@@ -123,12 +123,16 @@ async function processFollowups({ catchup = false } = {}) {
 
       if (!prevLogs.length) continue;
 
-      // Build send list — skip anyone already sent this step ever OR today
+      // Build send list — skip anyone who already has ANY log entry for this step
+      // (sent/opened/clicked = already sent; failed/pending = already attempted, don't hammer SMTP)
       const toSend = [];
       for (const log of prevLogs) {
-        // Skip if already received this step (any day)
-        const alreadySent = await queries.wasFollowupSent(campaign.id, log.email, seq.step_number);
-        if (alreadySent) continue;
+        const alreadyAttempted = await get(
+          `SELECT id FROM email_logs
+           WHERE campaign_id=? AND email=? AND followup_step=?`,
+          [campaign.id, log.email, seq.step_number]
+        );
+        if (alreadyAttempted) continue;
 
         const contact = await get(
           `SELECT * FROM contacts WHERE email=? AND status='active'`, [log.email]

@@ -1,9 +1,9 @@
 require('dotenv').config();
 const express = require('express');
-const cors    = require('cors');
+const cors = require('cors');
 const session = require('express-session');
-const path    = require('path');
-const fs      = require('fs');
+const path = require('path');
+const fs = require('fs');
 const { initializeDatabase, queries, run, get, all } = require('./db');
 const { initializeScheduler } = require('./scheduler');
 const { createTransporter, createTransporterFromDB, verifyConnection } = require('./mailer');
@@ -11,7 +11,7 @@ const { createTransporter, createTransporterFromDB, verifyConnection } = require
 // App password — change APP_PASSWORD in .env to whatever you want
 const APP_PASSWORD = process.env.APP_PASSWORD || 'varadatech2024';
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ─── Session (30-day remember-me cookie) ───────────────────────────────────
@@ -28,12 +28,12 @@ app.use(session({
 
 // ─── Auth middleware ───────────────────────────────────────────────────────
 // Allow: login page, tracking pixels, static assets (css/js/img/fonts)
-const PUBLIC_PATHS  = ['/login', '/track/', '/unsubscribe/', '/favicon.ico'];
-const ASSET_EXTS    = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.webp'];
+const PUBLIC_PATHS = ['/login', '/track/', '/unsubscribe/', '/favicon.ico'];
+const ASSET_EXTS = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.webp'];
 
 function requireAuth(req, res, next) {
-  const isPublic  = PUBLIC_PATHS.some(p => req.path.startsWith(p));
-  const isAsset   = ASSET_EXTS.some(ext => req.path.endsWith(ext));
+  const isPublic = PUBLIC_PATHS.some(p => req.path.startsWith(p));
+  const isAsset = ASSET_EXTS.some(ext => req.path.endsWith(ext));
   if (isPublic || isAsset || req.session?.loggedIn) return next();
   // API calls get 401 JSON; page requests redirect to /login
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not authenticated' });
@@ -177,7 +177,7 @@ app.post('/api/settings/smtp', async (req, res) => {
 
     // When dropdown value is '2525', treat it as port 2525 + no SSL
     if (secure === '2525') {
-      port   = '2525';
+      port = '2525';
       secure = 'false';
     }
 
@@ -186,10 +186,10 @@ app.post('/api/settings/smtp', async (req, res) => {
     for (const [key, val] of Object.entries(map)) {
       if (val !== undefined) await queries.setSetting(key, String(val));
     }
-    if (host)   process.env.SMTP_HOST   = host;
-    if (port)   process.env.SMTP_PORT   = String(port);
-    if (user)   process.env.SMTP_USER   = user;
-    if (pass)   process.env.SMTP_PASS   = pass;
+    if (host) process.env.SMTP_HOST = host;
+    if (port) process.env.SMTP_PORT = String(port);
+    if (user) process.env.SMTP_USER = user;
+    if (pass) process.env.SMTP_PASS = pass;
     if (secure !== undefined) process.env.SMTP_SECURE = String(secure);
     if (fromName) process.env.FROM_NAME = fromName;
     createTransporter();

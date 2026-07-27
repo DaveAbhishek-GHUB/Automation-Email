@@ -149,11 +149,11 @@ async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fr
     finalHtml = addUnsubscribeLink(finalHtml, trackingId, resolvedAppUrl);
   }
 
-  // Ensure transporter is ready — recreate if stale
-  if (!transporter) createTransporter();
-  if (!transporter) throw new Error('SMTP not configured. Enter credentials in Settings → SMTP section → Save SMTP Settings.');
+  // Always create a FRESH transporter for every individual send
+  // (reusing stale connections causes "Unexpected socket close" from GoDaddy)
+  const freshTransporter = nodemailer.createTransport(getSmtpConfig());
+  if (!freshTransporter) throw new Error('SMTP not configured. Enter credentials in Settings → SMTP section → Save SMTP Settings.');
 
-  // Wrap with 30s timeout so Send Test button never hangs forever
   const mailOptions = {
     from:    `"${resolvedFromName}" <${resolvedFromEmail}>`,
     to:      toName ? `"${toName}" <${to}>` : to,
@@ -165,9 +165,9 @@ async function sendEmail({ to, toName, subject, htmlBody, textBody, fromName, fr
   };
 
   return Promise.race([
-    transporter.sendMail(mailOptions),
+    freshTransporter.sendMail(mailOptions),
     new Promise((_, rej) => setTimeout(() =>
-      rej(new Error('Email send timed out (30s). SMTP may be unreachable. Check host/port or try port 465 with SSL.')), 30000))
+      rej(new Error('Email send timed out (30s). SMTP may be unreachable.')), 30000))
   ]);
 }
 
