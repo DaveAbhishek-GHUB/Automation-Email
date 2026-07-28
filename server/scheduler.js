@@ -94,7 +94,12 @@ async function processFollowups({ catchup = false } = {}) {
     // Time gate: only proceed if current time >= send_time (HH:MM string compare)
     // On catch-up startup pass we always proceed regardless of time
     if (!catchup && currentTime < sendTime) {
-      continue; // Too early — wait for the scheduled time
+      // Log once per campaign so user can see it's working
+      // (only log at exact minute boundaries to avoid spam)
+      if (currentTime.endsWith(':00') || currentTime.endsWith(':30')) {
+        console.log(`⏳ [${currentTime}] Waiting for ${sendTime} to send follow-ups for "${campaign.name}"`);
+      }
+      continue;
     }
 
     const sequences = await queries.getFollowupsByCampaign(campaign.id);
@@ -117,11 +122,14 @@ async function processFollowups({ catchup = false } = {}) {
          WHERE el.campaign_id = ?
            AND el.followup_step = ?
            AND el.status IN ('sent','opened','clicked')
-           AND el.sent_at <= datetime('now', '-' || ? || ' days')`,
+           AND DATE(el.sent_at, 'localtime') <= DATE('now', 'localtime', '-' || ? || ' days')`,
         [campaign.id, prevStep, seq.delay_days]
       );
 
-      if (!prevLogs.length) continue;
+      if (!prevLogs.length) {
+        console.log(`⏳ [${currentTime}] "${campaign.name}" step ${seq.step_number}: waiting for step ${prevStep} emails to be ${seq.delay_days}+ day(s) old`);
+        continue;
+      }
 
       // Build send list — skip anyone who already has ANY log entry for this step
       // (sent/opened/clicked = already sent; failed/pending = already attempted, don't hammer SMTP)
