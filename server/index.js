@@ -80,7 +80,7 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 // API Routes
 app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/campaigns', require('./routes/campaigns'));
-app.use('/api/analytics', require('./routes/analytics'));
+// app.use('/api/analytics', require('./routes/analytics')); // Analytics removed
 
 // ─── Tracking ────────────────────────────────────────────────────────────────
 
@@ -270,7 +270,7 @@ app.get('/api/settings/failed-logs', async (req, res) => {
 });
 
 // ─── Frontend Routes ──────────────────────────────────────────────────────────
-const pages = ['contacts', 'campaigns', 'followups', 'analytics', 'settings'];
+const pages = ['contacts', 'campaigns', 'followups', 'settings'];
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 pages.forEach(p => app.get(`/${p}`, (req, res) => res.sendFile(path.join(__dirname, `../public/${p}.html`))));
 

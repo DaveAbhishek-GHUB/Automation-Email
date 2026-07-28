@@ -33,8 +33,7 @@
       <a href="/contacts" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</a>
       <a href="/campaigns" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Campaigns</a>
       <a href="/followups" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Follow-ups</a>
-      <div class="nav-section-label">Insights</div>
-      <a href="/analytics" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analytics</a>
+      
       <div class="nav-section-label">System</div>
       <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg> Settings</a>
     </nav>
@@ -231,11 +230,9 @@ async function loadFollowups() {
                   data-step-date="${stepDate.toISOString()}"
                   data-launched="${launched ? '1' : '0'}"
                   onclick="sendFollowupNow(${c.id}, ${fu.step_number}, this)"
-                  style="font-weight:700;min-width:130px;transition:all .3s"
+                  style="font-weight:600;min-width:110px;transition:all .2s"
                   ${!btnEnabled ? 'disabled' : ''}
-                >
-                  ${btnEnabled ? '⚡ Send Now' : (isDateToday ? '🔒 Waiting…' : '🔒 Not Due Yet')}
-                </button>
+                >Send Now</button>
               ` : `<span class="chip chip-gray">${fu.status}</span>`}
             </div>
           </div>`;
@@ -330,27 +327,14 @@ function updateFollowupButtons() {
 
     if (enabled && btn.disabled) {
       btn.disabled = false;
-      btn.textContent = '⚡ Send Now';
-      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:700;min-width:130px;box-shadow:0 0 14px rgba(16,185,129,0.4);transition:all .3s';
+      btn.textContent = 'Send Now';
+      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:600;min-width:110px;transition:all .2s';
     } else if (!enabled && !btn.disabled) {
       btn.disabled = true;
-      btn.textContent = stepMidnight.getTime() === todayMidnight.getTime() ? '🔒 Waiting…' : '🔒 Not Due Yet';
-      btn.style.cssText = 'background:var(--bg-card);color:var(--text-muted);border-color:var(--border);font-weight:700;min-width:130px;transition:all .3s';
-    } else if (!enabled && btn.disabled) {
-      // Update countdown text for today's steps
-      if (stepMidnight.getTime() === todayMidnight.getTime()) {
-        const [sh, sm] = sendTime.split(':').map(Number);
-        const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm, 0);
-        const diff = target - now;
-        if (diff > 0) {
-          const h = Math.floor(diff / 3600000);
-          const m = Math.floor((diff % 3600000) / 60000);
-          const s = Math.floor((diff % 60000) / 1000);
-          const countdown = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
-          btn.textContent = `🔒 ${countdown}`;
-        }
-      }
+      btn.textContent = 'Send Now';
+      btn.style.cssText = 'background:var(--bg-card);color:var(--text-muted);border-color:var(--border);font-weight:600;min-width:110px;transition:all .2s';
     }
+    // No countdown text — button just says 'Send Now' always
   });
 }
 
@@ -358,19 +342,19 @@ async function sendFollowupNow(campaignId, step, btn) {
   if (!confirm(`Send Follow-up #${step} now to all contacts?`)) return;
   const origText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '📨 Sending…';
-  btn.style.cssText = 'background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;min-width:130px';
+  btn.textContent = 'Sending…';
+  btn.style.cssText = 'background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;min-width:110px';
   try {
     const result = await API.post(`/api/campaigns/${campaignId}/followup-step/${step}/send`);
-    showToast('success', '✅ Follow-up Sent!', result.message || `${result.sent} emails sent.`);
-    btn.textContent = '✅ Sent!';
-    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:700;min-width:130px';
+    showToast('success', 'Follow-up Sent!', result.message || `${result.sent} emails sent.`);
+    btn.textContent = 'Sent!';
+    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:600;min-width:110px';
     setTimeout(() => loadFollowups(), 2000);
   } catch(e) {
     showToast('error', 'Send Failed', e.message);
     btn.disabled = false;
-    btn.textContent = origText;
-    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:700;min-width:130px';
+    btn.textContent = 'Send Now';
+    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:600;min-width:110px';
   }
 }
 
@@ -378,7 +362,7 @@ async function launchCampaign(id) {
   if (!confirm('Launch this campaign now?')) return;
   try {
     await API.post(`/api/campaigns/${id}/send`);
-    showToast('success','Launched!','Follow-ups will run automatically.');
+    showToast('success', 'Campaign launched!', 'Follow-ups will run automatically.');
     loadFollowups();
   } catch(e) { showToast('error','Error',e.message); }
 }

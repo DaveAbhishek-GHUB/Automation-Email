@@ -58,8 +58,7 @@
       <a href="/contacts" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</a>
       <a href="/campaigns" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Campaigns</a>
       <a href="/followups" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Follow-ups</a>
-      <div class="nav-section-label">Insights</div>
-      <a href="/analytics" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analytics</a>
+      
       <div class="nav-section-label">System</div>
       <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg> Settings</a>
     </nav>
@@ -715,7 +714,7 @@ async function loadCampaigns() {
         <td class="text-xs text-muted">${c.created_at ? formatDate(c.created_at) : '—'}</td>
         <td>
           <div class="flex gap-2" style="align-items:center">
-            ${c.status === 'draft' ? `<button class="btn btn-success btn-sm" onclick="launchNow(${c.id})">⚡ Launch</button>` : ''}
+            ${c.status === 'draft' ? `<button class="btn btn-success btn-sm" onclick="launchNow(${c.id})">Launch</button>` : ''}
             ${c.status === 'scheduled' ? `
               <button
                 id="sched-btn-${c.id}"
@@ -725,10 +724,10 @@ async function loadCampaigns() {
                 onclick="launchScheduled(${c.id}, this)"
                 style="min-width:140px;font-weight:700;transition:all .3s"
                 disabled
-              >🔒 Checking…</button>
+              >Checking…</button>
             ` : ''}
-            <button class="btn btn-ghost btn-sm" onclick="viewLogs(${c.id},'${esc(c.name)}')">📋 Logs</button>
-            <button class="btn btn-danger btn-sm" onclick="delCampaign(${c.id})">🗑</button>
+            <button class="btn btn-ghost btn-sm" onclick="viewLogs(${c.id},'${esc(c.name)}')">Logs</button>
+            <button class="btn btn-danger btn-sm" onclick="delCampaign(${c.id})">Delete</button>
           </div>
         </td>
       </tr>
@@ -790,7 +789,7 @@ function updateScheduledButtons() {
     const scheduledAt = btn.dataset.scheduledAt;
     if (!scheduledAt) {
       btn.disabled = false;
-      btn.textContent = '⚡ Send Now';
+      btn.textContent = 'Send Now';
       btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);min-width:140px;font-weight:700';
       return;
     }
@@ -799,8 +798,8 @@ function updateScheduledButtons() {
     if (diff <= 0) {
       // Time arrived — enable button
       btn.disabled = false;
-      btn.textContent = '⚡ Send Now';
-      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);min-width:140px;font-weight:700;box-shadow:0 0 14px rgba(16,185,129,0.45);transition:all .3s';
+      btn.textContent = 'Send Now';
+      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);min-width:140px;font-weight:700;transition:all .3s';
     } else {
       // Still waiting — show live countdown
       btn.disabled = true;
@@ -808,7 +807,7 @@ function updateScheduledButtons() {
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       const countdown = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
-      btn.textContent = `🔒 Sends in ${countdown}`;
+      btn.textContent = `Sends in ${countdown}`;
       btn.style.cssText = 'background:var(--bg-card);color:var(--text-muted);border-color:var(--border);min-width:140px;font-weight:700;transition:all .3s';
     }
   });
@@ -817,10 +816,10 @@ function updateScheduledButtons() {
 async function launchScheduled(id, btn) {
   if (!confirm('Send this campaign now?')) return;
   btn.disabled = true;
-  btn.textContent = '📨 Sending…';
+  btn.textContent = 'Sending…';
   try {
     await API.post(`/api/campaigns/${id}/send`);
-    showToast('success', '🚀 Campaign Sent!', 'Emails are sending now.');
+    showToast('success', 'Campaign Sent!', 'Emails are sending now.');
     loadCampaigns();
   } catch(e) {
     showToast('error', 'Error', e.message);
