@@ -174,6 +174,71 @@ router.put('/:id/followup-time', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// POST /api/campaigns/:id/followup-step/:step/send — Manual trigger: force-send a follow-up step now
+router.post('/:id/followup-step/:step/send', async (req, res) => {
+  try {
+    const campaignId = parseInt(req.params.id);
+    const stepNumber = parseInt(req.params.step);
+    const { sendBulkCampaign } = require('../mailer');
+
+    const campaign = await queries.getCampaignById(campaignId);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    // Get the follow-up sequence for this step
+    const sequences = await queries.getFollowupsByCampaign(campaignId);
+    const seq = sequences.find(s => s.step_number === stepNumber);
+    if (!seq) return res.status(404).json({ error: `Follow-up step ${stepNumber} not found` });
+
+    // Get contacts who completed the previous step (any time — no delay gate for manual send)
+    const prevStep = stepNumber - 1;
+    const prevLogs = await all(
+      `SELECT DISTINCT el.email, el.contact_id FROM email_logs el
+       WHERE el.campaign_id = ? AND el.followup_step = ?
+         AND el.status IN ('sent','opened','clicked')`,
+      [campaignId, prevStep]
+    );
+
+    if (!prevLogs.length) {
+      return res.status(400).json({ error: 'No contacts have completed the previous step yet. Launch the campaign first.' });
+    }
+
+    // Clear old failed/pending logs for this step so we can retry cleanly
+    await run(
+      `DELETE FROM email_logs WHERE campaign_id=? AND followup_step=? AND status IN ('failed','pending')`,
+      [campaignId, stepNumber]
+    );
+
+    // Build send list: skip contacts who already received this step successfully
+    const toSend = [];
+    for (const log of prevLogs) {
+      const alreadySent = await get(
+        `SELECT id FROM email_logs WHERE campaign_id=? AND email=? AND followup_step=? AND status IN ('sent','opened','clicked')`,
+        [campaignId, log.email, stepNumber]
+      );
+      if (alreadySent) continue;
+
+      const contact = await get(`SELECT * FROM contacts WHERE email=? AND status='active'`, [log.email]);
+      if (contact) toSend.push(contact);
+    }
+
+    if (!toSend.length) {
+      return res.json({ success: true, message: 'All contacts already received this follow-up.', sent: 0 });
+    }
+
+    // Send immediately
+    const followupCampaign = { ...campaign, subject: seq.subject, body_html: seq.body_html, body_text: seq.body_text };
+    const result = await sendBulkCampaign({
+      campaign: followupCampaign,
+      contacts: toSend,
+      followupStep: stepNumber,
+      followupSequenceId: seq.id,
+    });
+
+    res.json({ success: true, sent: result.sentCount, failed: result.failedCount,
+      message: `Sent ${result.sentCount} follow-up emails${result.failedCount > 0 ? `, ${result.failedCount} failed` : ''}` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // DELETE /api/campaigns/:id
 router.delete('/:id', async (req, res) => {
   try {

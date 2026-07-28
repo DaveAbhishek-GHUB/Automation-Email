@@ -193,25 +193,50 @@ async function loadFollowups() {
         ...followups.map((fu, idx) => {
           cumulativeDays += fu.delay_days;
           const stepDate = addDays(launchDate, cumulativeDays);
-          const isPast   = stepDate <= today && launched;
-          const isFuture = stepDate > today || !launched;
+          // Normalize stepDate to midnight for date-only comparison
+          const stepDateMidnight = new Date(stepDate.getFullYear(), stepDate.getMonth(), stepDate.getDate());
+          const todayMidnight    = new Date(today.getFullYear(), today.getMonth(), today.getDate());
           const stepActive = fu.status === 'active';
-          const isToday  = stepDate.toDateString() === today.toDateString() && launched;
+
+          // Is step's date in the past or today?
+          const dateReached = stepDateMidnight <= todayMidnight && launched;
+          // Is the send time reached today?
+          const nowHHMM = `${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
+          const timeReached = nowHHMM >= sendTime;
+          const btnEnabled = dateReached && timeReached;
+          const isFuture = !dateReached;
+          const isPast = dateReached && !isFuture;
+
+          // For countdown display when date is today but time not reached
+          const isDateToday = stepDateMidnight.getTime() === todayMidnight.getTime() && launched;
+
           return `
           <div class="step-connector"></div>
-          <div class="step-row">
+          <div class="step-row" style="flex-wrap:wrap;gap:8px">
             <div class="step-num followup">${idx + 2}</div>
-            <div style="flex:1;min-width:0">
+            <div style="flex:1;min-width:120px">
               <div style="font-weight:600;font-size:13px;color:var(--text)">Follow-up #${idx + 1}</div>
               <div style="font-size:12px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fu.subject}</div>
             </div>
             <div class="flex gap-2 items-center flex-wrap" style="justify-content:flex-end">
               <span style="font-size:11px;color:var(--text-muted)">+${fu.delay_days}d</span>
-              ${dateChip(stepDate, isPast && stepActive, isFuture)}
-              ${isToday && stepActive ? todayStatusBadge(sendTime) : ''}
-              <span class="chip ${stepActive ? (isPast ? 'chip-green' : 'chip-blue') : 'chip-gray'}">
-                ${stepActive ? (isPast ? 'Sent' : 'Scheduled') : fu.status}
-              </span>
+              ${dateChip(stepDate, isPast && stepActive && !isFuture, isFuture)}
+              ${stepActive && launched ? `
+                <button
+                  id="fu-btn-${c.id}-${fu.step_number}"
+                  class="btn btn-sm"
+                  data-campaign-id="${c.id}"
+                  data-step="${fu.step_number}"
+                  data-send-time="${sendTime}"
+                  data-step-date="${stepDate.toISOString()}"
+                  data-launched="${launched ? '1' : '0'}"
+                  onclick="sendFollowupNow(${c.id}, ${fu.step_number}, this)"
+                  style="font-weight:700;min-width:130px;transition:all .3s"
+                  ${!btnEnabled ? 'disabled' : ''}
+                >
+                  ${btnEnabled ? '⚡ Send Now' : (isDateToday ? '🔒 Waiting…' : '🔒 Not Due Yet')}
+                </button>
+              ` : `<span class="chip chip-gray">${fu.status}</span>`}
             </div>
           </div>`;
         })
@@ -245,7 +270,7 @@ async function loadFollowups() {
             <div>
               <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">⏰ FOLLOW-UP SEND TIME</div>
               <div style="font-size:20px;font-weight:800;color:var(--blue)">${timeLabel}</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">daily — fires at this time when app is running</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Buttons below enable at this time each day</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
               <input type="time" id="time-input-${c.id}" value="${sendTime}"
@@ -273,8 +298,79 @@ async function loadFollowups() {
     }));
 
     container.innerHTML = cards.join('');
+    // Start real-time button updater after rendering
+    startFollowupButtonTimer();
   } catch(e) {
     container.innerHTML = `<div class="empty-state"><h3>Error loading</h3><p>${e.message}</p></div>`;
+  }
+}
+
+// ── Real-time button enable/disable (runs every second) ──────────────────────
+let _fuTimerRunning = false;
+function startFollowupButtonTimer() {
+  if (_fuTimerRunning) return;
+  _fuTimerRunning = true;
+  setInterval(updateFollowupButtons, 1000);
+}
+
+function updateFollowupButtons() {
+  const now = new Date();
+  const nowHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  document.querySelectorAll('[id^="fu-btn-"]').forEach(btn => {
+    if (btn.dataset.launched !== '1') return;
+    const sendTime  = btn.dataset.sendTime || '09:00';
+    const stepDate  = new Date(btn.dataset.stepDate);
+    const stepMidnight = new Date(stepDate.getFullYear(), stepDate.getMonth(), stepDate.getDate());
+
+    const dateReached = stepMidnight <= todayMidnight;
+    const timeReached = nowHHMM >= sendTime;
+    const enabled     = dateReached && timeReached;
+
+    if (enabled && btn.disabled) {
+      btn.disabled = false;
+      btn.textContent = '⚡ Send Now';
+      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:700;min-width:130px;box-shadow:0 0 14px rgba(16,185,129,0.4);transition:all .3s';
+    } else if (!enabled && !btn.disabled) {
+      btn.disabled = true;
+      btn.textContent = stepMidnight.getTime() === todayMidnight.getTime() ? '🔒 Waiting…' : '🔒 Not Due Yet';
+      btn.style.cssText = 'background:var(--bg-card);color:var(--text-muted);border-color:var(--border);font-weight:700;min-width:130px;transition:all .3s';
+    } else if (!enabled && btn.disabled) {
+      // Update countdown text for today's steps
+      if (stepMidnight.getTime() === todayMidnight.getTime()) {
+        const [sh, sm] = sendTime.split(':').map(Number);
+        const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm, 0);
+        const diff = target - now;
+        if (diff > 0) {
+          const h = Math.floor(diff / 3600000);
+          const m = Math.floor((diff % 3600000) / 60000);
+          const s = Math.floor((diff % 60000) / 1000);
+          const countdown = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+          btn.textContent = `🔒 ${countdown}`;
+        }
+      }
+    }
+  });
+}
+
+async function sendFollowupNow(campaignId, step, btn) {
+  if (!confirm(`Send Follow-up #${step} now to all contacts?`)) return;
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '📨 Sending…';
+  btn.style.cssText = 'background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;min-width:130px';
+  try {
+    const result = await API.post(`/api/campaigns/${campaignId}/followup-step/${step}/send`);
+    showToast('success', '✅ Follow-up Sent!', result.message || `${result.sent} emails sent.`);
+    btn.textContent = '✅ Sent!';
+    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:700;min-width:130px';
+    setTimeout(() => loadFollowups(), 2000);
+  } catch(e) {
+    showToast('error', 'Send Failed', e.message);
+    btn.disabled = false;
+    btn.textContent = origText;
+    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);font-weight:700;min-width:130px';
   }
 }
 
@@ -301,4 +397,5 @@ async function updateSendTime(campaignId) {
 document.addEventListener('DOMContentLoaded', loadFollowups);
 </script>
 </body>
+
 </html>

@@ -714,8 +714,19 @@ async function loadCampaigns() {
         <td>${c.click_count} <span class="text-muted text-xs">(${pct(c.click_count, c.sent_count)})</span></td>
         <td class="text-xs text-muted">${c.created_at ? formatDate(c.created_at) : '—'}</td>
         <td>
-          <div class="flex gap-2">
+          <div class="flex gap-2" style="align-items:center">
             ${c.status === 'draft' ? `<button class="btn btn-success btn-sm" onclick="launchNow(${c.id})">⚡ Launch</button>` : ''}
+            ${c.status === 'scheduled' ? `
+              <button
+                id="sched-btn-${c.id}"
+                class="btn btn-sm"
+                data-campaign-id="${c.id}"
+                data-scheduled-at="${c.scheduled_at || ''}"
+                onclick="launchScheduled(${c.id}, this)"
+                style="min-width:140px;font-weight:700;transition:all .3s"
+                disabled
+              >🔒 Checking…</button>
+            ` : ''}
             <button class="btn btn-ghost btn-sm" onclick="viewLogs(${c.id},'${esc(c.name)}')">📋 Logs</button>
             <button class="btn btn-danger btn-sm" onclick="delCampaign(${c.id})">🗑</button>
           </div>
@@ -768,7 +779,55 @@ async function viewLogs(id, name) {
   } catch(e) { el.innerHTML = '<div class="text-muted p-4">Error loading logs.</div>'; }
 }
 
-document.addEventListener('DOMContentLoaded', loadCampaigns);
+document.addEventListener('DOMContentLoaded', () => {
+  loadCampaigns();
+  setInterval(updateScheduledButtons, 1000);
+});
+
+function updateScheduledButtons() {
+  const now = new Date();
+  document.querySelectorAll('[id^="sched-btn-"]').forEach(btn => {
+    const scheduledAt = btn.dataset.scheduledAt;
+    if (!scheduledAt) {
+      btn.disabled = false;
+      btn.textContent = '⚡ Send Now';
+      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);min-width:140px;font-weight:700';
+      return;
+    }
+    const target = new Date(scheduledAt);
+    const diff = target - now;
+    if (diff <= 0) {
+      // Time arrived — enable button
+      btn.disabled = false;
+      btn.textContent = '⚡ Send Now';
+      btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green);min-width:140px;font-weight:700;box-shadow:0 0 14px rgba(16,185,129,0.45);transition:all .3s';
+    } else {
+      // Still waiting — show live countdown
+      btn.disabled = true;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const countdown = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+      btn.textContent = `🔒 Sends in ${countdown}`;
+      btn.style.cssText = 'background:var(--bg-card);color:var(--text-muted);border-color:var(--border);min-width:140px;font-weight:700;transition:all .3s';
+    }
+  });
+}
+
+async function launchScheduled(id, btn) {
+  if (!confirm('Send this campaign now?')) return;
+  btn.disabled = true;
+  btn.textContent = '📨 Sending…';
+  try {
+    await API.post(`/api/campaigns/${id}/send`);
+    showToast('success', '🚀 Campaign Sent!', 'Emails are sending now.');
+    loadCampaigns();
+  } catch(e) {
+    showToast('error', 'Error', e.message);
+    btn.disabled = false;
+  }
+}
+
 </script>
 </body>
 </html>
