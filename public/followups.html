@@ -189,7 +189,7 @@ async function loadFollowups() {
           </div>`;
         })(),
 
-        ...followups.map((fu, idx) => {
+        ...await Promise.all(followups.map(async (fu, idx) => {
           cumulativeDays += fu.delay_days;
           const stepDate = addDays(launchDate, cumulativeDays);
           // Normalize stepDate to midnight for date-only comparison
@@ -197,17 +197,23 @@ async function loadFollowups() {
           const todayMidnight    = new Date(today.getFullYear(), today.getMonth(), today.getDate());
           const stepActive = fu.status === 'active';
 
+          // Check if this step was already sent (check email_logs)
+          let alreadySent = false;
+          let sentCount = 0;
+          try {
+            const stepLogs = await API.get(`/api/campaigns/${c.id}/logs?step=${fu.step_number}&limit=100`);
+            sentCount = stepLogs.logs?.length || 0;
+            alreadySent = sentCount > 0;
+          } catch(e) {}
+
           // Is step's date in the past or today?
           const dateReached = stepDateMidnight <= todayMidnight && launched;
           // Is the send time reached today?
           const nowHHMM = `${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
           const timeReached = nowHHMM >= sendTime;
-          const btnEnabled = dateReached && timeReached;
+          const btnEnabled = dateReached && timeReached && !alreadySent;
           const isFuture = !dateReached;
-          const isPast = dateReached && !isFuture;
-
-          // For countdown display when date is today but time not reached
-          const isDateToday = stepDateMidnight.getTime() === todayMidnight.getTime() && launched;
+          const isPast = dateReached && alreadySent;
 
           return `
           <div class="step-connector"></div>
@@ -219,24 +225,27 @@ async function loadFollowups() {
             </div>
             <div class="flex gap-2 items-center flex-wrap" style="justify-content:flex-end">
               <span style="font-size:11px;color:var(--text-muted)">+${fu.delay_days}d</span>
-              ${dateChip(stepDate, isPast && stepActive && !isFuture, isFuture)}
-              ${stepActive && launched ? `
-                <button
-                  id="fu-btn-${c.id}-${fu.step_number}"
-                  class="btn btn-sm"
-                  data-campaign-id="${c.id}"
-                  data-step="${fu.step_number}"
-                  data-send-time="${sendTime}"
-                  data-step-date="${stepDate.toISOString()}"
-                  data-launched="${launched ? '1' : '0'}"
-                  onclick="sendFollowupNow(${c.id}, ${fu.step_number}, this)"
-                  style="font-weight:600;min-width:110px;transition:all .2s"
-                  ${!btnEnabled ? 'disabled' : ''}
-                >Send Now</button>
-              ` : `<span class="chip chip-gray">${fu.status}</span>`}
+              ${dateChip(stepDate, isPast && stepActive, isFuture && !alreadySent)}
+              ${alreadySent
+                ? `<span class="chip chip-green" style="font-weight:600">${sentCount} sent</span>`
+                : stepActive && launched
+                  ? `<button
+                      id="fu-btn-${c.id}-${fu.step_number}"
+                      class="btn btn-sm"
+                      data-campaign-id="${c.id}"
+                      data-step="${fu.step_number}"
+                      data-send-time="${sendTime}"
+                      data-step-date="${stepDate.toISOString()}"
+                      data-launched="${launched ? '1' : '0'}"
+                      onclick="sendFollowupNow(${c.id}, ${fu.step_number}, this)"
+                      style="font-weight:600;min-width:110px;transition:all .2s"
+                      ${!btnEnabled ? 'disabled' : ''}
+                    >Send Now</button>`
+                  : `<span class="chip chip-gray">${fu.status}</span>`
+              }
             </div>
           </div>`;
-        })
+        }))
       ].join('');
 
       const totalDays = followups.reduce((sum, fu) => sum + fu.delay_days, 0);

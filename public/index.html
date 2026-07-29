@@ -48,19 +48,11 @@
     </header>
 
     <div class="page-content">
-      <!-- Stats -->
-      <div class="stats-grid">
+      <!-- Stats (2 cards only) -->
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr">
         <div class="stat-card">
           <div class="stat-icon blue"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
           <div class="stat-info"><div class="stat-value" id="stat-sent">—</div><div class="stat-label">Total Emails Sent</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon green"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <div class="stat-info"><div class="stat-value" id="stat-opened">—</div><div class="stat-label">Total Opens</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon blue"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></div>
-          <div class="stat-info"><div class="stat-value" id="stat-clicked">—</div><div class="stat-label">Total Clicks</div></div>
         </div>
         <div class="stat-card">
           <div class="stat-icon yellow"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -93,7 +85,10 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Create New Campaign
             </a>
-
+            <a href="/followups" class="btn btn-ghost w-full" style="justify-content:flex-start">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              View Follow-up Sequences
+            </a>
             <a href="/settings" class="btn btn-ghost w-full" style="justify-content:flex-start">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 5.14M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 5.14"/><path d="M14.83 9.17a4 4 0 1 0-5.66 5.66"/></svg>
               Configure SMTP
@@ -123,36 +118,34 @@
 <script>
 async function loadDashboard() {
   try {
-    const { total_sent, total_opened, total_clicked } = (await API.get('/api/analytics/overview')).stats || {};
-    document.getElementById('stat-sent').textContent    = (total_sent    || 0).toLocaleString();
-    document.getElementById('stat-opened').textContent  = (total_opened  || 0).toLocaleString();
-    document.getElementById('stat-clicked').textContent = (total_clicked || 0).toLocaleString();
+    // Get total sent from campaigns (sum of sent_count) — no analytics API needed
+    const { campaigns } = await API.get('/api/campaigns');
+    const totalSent = (campaigns || []).reduce((sum, c) => sum + (c.sent_count || 0), 0);
+    document.getElementById('stat-sent').textContent = totalSent.toLocaleString();
+
+    // Recent campaigns list
+    const el = document.getElementById('recent-campaigns');
+    if (!campaigns?.length) {
+      el.innerHTML = `<div style="color:var(--text-light);font-size:13px;padding:20px 0;text-align:center">No campaigns yet. <a href="/campaigns" style="color:var(--blue)">Create one</a></div>`;
+    } else {
+      el.innerHTML = campaigns.slice(0,5).map(c => `
+        <div class="recent-campaign">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${formatDate(c.created_at)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-left:12px">
+            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">${c.sent_count}</div><div style="font-size:10px;color:var(--text-muted)">Sent</div></div>
+            ${statusBadge(c.status)}
+          </div>
+        </div>
+      `).join('');
+    }
   } catch(e) {}
 
   try {
     const { total } = await API.get('/api/contacts/stats/summary').catch(() => ({}));
     document.getElementById('stat-contacts').textContent = (total || 0).toLocaleString();
-  } catch(e) {}
-
-  try {
-    const { campaigns } = await API.get('/api/campaigns');
-    const el = document.getElementById('recent-campaigns');
-    if (!campaigns?.length) {
-      el.innerHTML = `<div style="color:var(--text-light);font-size:13px;padding:20px 0;text-align:center">No campaigns yet. <a href="/campaigns" style="color:var(--blue)">Create one</a></div>`;
-      return;
-    }
-    el.innerHTML = campaigns.slice(0,5).map(c => `
-      <div class="recent-campaign">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${formatDate(c.created_at)}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-left:12px">
-          <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">${c.sent_count}</div><div style="font-size:10px;color:var(--text-muted)">Sent</div></div>
-          ${statusBadge(c.status)}
-        </div>
-      </div>
-    `).join('');
   } catch(e) {}
 }
 document.addEventListener('DOMContentLoaded', loadDashboard);
